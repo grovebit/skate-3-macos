@@ -96,27 +96,32 @@ def convert_map(archive,work,maps,stage,game_exe,log,report):
         nonlocal started
         now=time.perf_counter();timings[phase]=round(now-started,3);started=now
         report(f'{archive.stem}: {phase} {timings[phase]:.3f}s')
+    district=archive.stem.removeprefix('world')
+    label=district.removeprefix('DIST_')
+    # The retail start locator and heading (map_starts.py). A district without
+    # one fails here, before its conversion. archive is <game>/data/content/*.big.
+    from .map_starts import start as authored_start
+    start=authored_start(archive.parents[2],json.loads(
+        (stage/'assets/private/stock/skater-collections.json').read_text(encoding='utf-8')),district)
+    report(f"{label}: start {start['locator']} from {start['source']}")
+    finished('start')
     map_tools=TOOLS/'vendor/university/tools/vanilla_map_extraction/tools'
     sys.path.insert(0,str(map_tools))
     from prepare_hawaiian_dream import prepare
     from prepare_university import EXCLUDED_NORMAL_TEXTURE_IDS
     from build_retail_collision_archive import build_archive
-    from .map_writer import write as write_map, SpawnSelector
-    district=archive.stem.removeprefix('world')
-    label=district.removeprefix('DIST_')
+    from .map_writer import write as write_map
     district_work=work/district
     extract(archive,district_work/'raw')
     finished('extract')
     stream=district_work/'raw/data/content/world/stream'/district
     if not stream.is_dir():raise RuntimeError('Missing district stream '+str(stream))
-    spawn=SpawnSelector(district)
     manifest_path=prepare(stream_directory=stream,output_root=district_work/'intermediate',
         utt_root=TOOLS/'vendor/utt',district_name=district,map_name=label,
         package_name='Skate 3 owned disc',cache_format='skate3-rust-map-v1',
         # Smaller parks keep their textures in Pres rather than a Tex stream.
         texture_stream_names=('Tex',) if any(stream.glob('cTex_*.xsf')) else (),
         excluded_normal_texture_ids=EXCLUDED_NORMAL_TEXTURE_IDS,raw_texture_cache=True,
-        collision_consumer=spawn.consider,
         # Model/texture RX2 copies are unused by the direct writer and were
         # deleted after conversion. Keep simulation and irradiance sources.
         write_render_sources=False)
@@ -125,7 +130,7 @@ def convert_map(archive,work,maps,stage,game_exe,log,report):
     build_archive(manifest_path,collision)
     finished('collision_archive')
     final=maps/(label+'.skate')
-    write_map(manifest_path,final,collision,report,prepared_spawn=spawn.result(label))
+    write_map(manifest_path,final,collision,report,spawn=tuple(start['position']),heading=start['heading'])
     finished('write_map')
     from .dynamic_props import export as write_props
     caches=list((work/'dmo/cache').glob('DMO_*'))

@@ -1,8 +1,10 @@
 """Join retail FE destinations to localized names and RX2 location matrices.
 
 Owned content stays in private sidecars. No guessed coordinates or renamed spots.
-LocationManager 828A3D50 loads data/content/global_locators; EB0009 records
-contain a 64-byte matrix and a section-relative name pointer at +104.
+Base-disc 8287C568 passes data/content/global_locators to the *.rx2 loader
+828E8B68; EB0009 records contain a 64-byte matrix and a section-relative name
+pointer at +104. 828E9840 finds a locator by its name's 82946F78 hash
+(docs/world/spawns.md).
 """
 import hashlib
 import json

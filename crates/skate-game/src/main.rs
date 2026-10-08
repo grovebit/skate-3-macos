@@ -77,8 +77,14 @@ fn main() -> bevy::app::AppExit {
         }
     };
     if config.multiplayer.spawn_offset != 0.0 {
+        // Host rule for network play (the original uses per-player spawn slots;
+        // docs/world/spawns.md): offset along the deck's right axis so players
+        // stand side by side whatever the map's authored heading.
         let mut spawn = physics.board.part_transforms()[skate_core::physics::board::BodyId::Deck.index()];
-        spawn.translation.x += config.multiplayer.spawn_offset;
+        let [x, y, z] = spawn.basis.columns[0].map(|v| v * config.multiplayer.spawn_offset);
+        spawn.translation.x += x;
+        spawn.translation.y += y;
+        spawn.translation.z += z;
         physics.board.set_transform(spawn);
     }
     eprintln!("REPORT_META stage=skater_initialization");

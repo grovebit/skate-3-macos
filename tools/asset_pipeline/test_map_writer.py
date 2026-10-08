@@ -1,14 +1,14 @@
 import io
+import json
 import struct
 import tempfile
 import unittest
 import zlib
 from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image
-from .map_writer import SpawnSelector, write_textures
+from .map_writer import write, write_textures
 
 
 class MapWriterTests(unittest.TestCase):
@@ -44,20 +44,23 @@ class MapWriterTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 write_textures(io.BytesIO(),Path(work),{'missing':dict(rgba='missing',width=4,height=4)})
 
-    def test_spawn_streaming_preserves_ties_and_university_height(self):
-        def mesh(x,y,z):
-            return SimpleNamespace(bounds_min=(x-10,y,z-10),bounds_max=(x+10,y,z+10),triangles=[
-                SimpleNamespace(a=(x-10,y,z-10),b=(x,y,z+10),c=(x+10,y,z-10))])
-        selector=SpawnSelector('DIST_Test')
-        selector.consider([mesh(0,5,0),mesh(0,20,0)])
-        self.assertEqual(selector.result('test'),(0.,6.,-10/3))
-        selector.consider([mesh(500,30,500)])
-        self.assertEqual(selector.result('test'),(0.,6.,-10/3))
-        university=SpawnSelector('DIST_University')
-        university.consider([mesh(330,100,-710),mesh(330,132,-710),mesh(0,132,0)])
-        self.assertEqual(university.result('University'),(330.,133.,-710.))
-        with self.assertRaisesRegex(ValueError,'No supported spawn'):
-            SpawnSelector('DIST_Test').result('test')
+    def test_header_carries_the_authored_spawn_and_heading(self):
+        with tempfile.TemporaryDirectory() as work:
+            root=Path(work)
+            manifest=root/'manifest.json';collision=root/'collision.rwcmset'
+            manifest.write_text(json.dumps(dict(map_name='Park',textures={},models=[],grind_splines=[],
+                normal_texture_policy=dict(excluded_texture_ids=[]),other_presentation_assets=[])))
+            collision.write_bytes(b'RWCM')
+            def header(path):
+                data=path.read_bytes();self.assertEqual(data[:12],b'SKATE14\0'+struct.pack('<I',0x12345678))
+                self.assertEqual(data[12:20],struct.pack('<I',4)+b'Park')
+                return struct.unpack_from('<4f',data,20)
+            write(manifest,root/'park.skate',collision,spawn=(-64.25,0.75,0.),heading=1.5)
+            self.assertEqual(header(root/'park.skate'),(-64.25,0.75,0.,1.5))
+            write(manifest,root/'backdrop.skate',None,render_only=True,spawn=(1.,2.,3.),heading=1.5)
+            self.assertEqual(header(root/'backdrop.skate'),(0.,0.,0.,0.))
+            with self.assertRaisesRegex(ValueError,'requires its authored spawn'):
+                write(manifest,root/'missing.skate',collision)
 
 
 if __name__=='__main__':unittest.main()

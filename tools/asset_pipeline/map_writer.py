@@ -1,6 +1,6 @@
 """Direct retail cache -> SKATE14 writer. All geometry remains in Y-up metres."""
 from pathlib import Path
-import io,json,struct,sys,zlib
+import io,json,struct,zlib
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
@@ -45,65 +45,10 @@ def write_textures(output,root,textures):
             if name is not None:pending.append(pool.submit(packed_texture,root,name,textures[name]))
 def normalise(a):return a/np.maximum(np.linalg.norm(a,axis=1,keepdims=True),1e-20)
 
-class SpawnSelector:
-    """Keep the original triangle search order while consuming decoded meshes."""
-    def __init__(self, district_name):
-        self.university=district_name=='DIST_University'
-        self.best=None
-
-    def consider(self, meshes):
-        university=self.university;best=self.best
-        for mesh in meshes:
-            if not mesh.triangles:continue
-            if university and not (mesh.bounds_min[0]<=330<=mesh.bounds_max[0] and mesh.bounds_min[2]<=-710<=mesh.bounds_max[2]):continue
-            if not university and best is not None:
-                nearest=sum(max(mesh.bounds_min[j],-mesh.bounds_max[j],0.)**2 for j in (0,2))
-                if nearest>best[0]+.01:continue
-            triangles=np.asarray([(tri.a,tri.b,tri.c) for tri in mesh.triangles],dtype=np.float64)
-            a,b,c=triangles[:,0],triangles[:,1],triangles[:,2]
-            cross=np.cross(b-a,c-a);length=np.linalg.norm(cross,axis=1)
-            valid=(length>=4)&(cross[:,1]>=.9*length)
-            a,b,c=a[valid],b[valid],c[valid]
-            if not len(a):continue
-            if university:
-                ab=b-a;ac=c-a;dx=330.-a[:,0];dz=-710.-a[:,2]
-                det=ab[:,0]*ac[:,2]-ac[:,0]*ab[:,2]
-                valid=np.abs(det)>=1e-12
-                first=np.divide(dx*ac[:,2]-ac[:,0]*dz,det,out=np.zeros_like(det),where=valid)
-                second=np.divide(ab[:,0]*dz-dx*ab[:,2],det,out=np.zeros_like(det),where=valid)
-                valid&=(first>=-1e-5)&(second>=-1e-5)&(first+second<=1.00001)
-                height=a[:,1]+first*ab[:,1]+second*ac[:,1]
-                points=np.column_stack((np.full(len(a),330.),height+1.,np.full(len(a),-710.)))
-                scores=np.where(valid,np.abs(height-132.),np.inf)
-            else:
-                points=(a+b+c)/3;scores=points[:,0]**2+points[:,2]**2
-                points[:,1]+=1.
-            index=np.argmin(scores);score=scores[index]
-            if np.isfinite(score) and (best is None or score<best[0]):best=(score,tuple(points[index]))
-        self.best=best
-
-    def result(self, map_name):
-        if self.best is None:raise ValueError('No supported spawn surface in '+map_name)
-        return self.best[1]
-
-
-def spawn_point(manifest,root):
-    from retail_collision_mesh import decode_rx2_clustered_meshes
-    selector=SpawnSelector(manifest['district_name'])
-    for entry in manifest['simulation_assets']:
-        if not entry.get('collision_meshes'):continue
-        bounds=[mesh['bounds'] for mesh in entry['collision_meshes']]
-        if selector.university:
-            if not any(b['minimum'][0]<=330<=b['maximum'][0] and
-                       b['minimum'][2]<=-710<=b['maximum'][2] for b in bounds):continue
-        elif selector.best is not None:
-            def nearest_square(b):
-                return sum(max(b['minimum'][j],-b['maximum'][j],0.)**2 for j in (0,2))
-            if min(map(nearest_square,bounds))>selector.best[0]+.01:continue
-        selector.consider(decode_rx2_clustered_meshes((root/entry['rx2']).read_bytes()))
-    return selector.result(manifest['map_name'])
-
-def write(manifest_path,output,collision,report=lambda _:None, *, render_only=False, prepared_spawn=None):
+def write(manifest_path,output,collision,report=lambda _:None, *, render_only=False, spawn=None, heading=0.):
+    """A playable map takes its district's authored start (map_starts.start):
+    the locator position and the yaw of its forward row. Render-only maps have none."""
+    if not render_only and spawn is None:raise ValueError('A playable map requires its authored spawn')
     root=manifest_path.parent;m=json.loads(manifest_path.read_text());textures=m['textures']
     ids={name:i+1 for i,name in enumerate(sorted(textures))}
     excluded=set(m['normal_texture_policy']['excluded_texture_ids'])
@@ -163,7 +108,7 @@ def write(manifest_path,output,collision,report=lambda _:None, *, render_only=Fa
                     record['frame'][:,:3]=np.rint(np.clip(binormal,-1,1)*127).astype('i1');record['frame'][:,3]=np.rint(sign*127).astype('i1')
                 if not np.isfinite(pos).all():raise ValueError('Non-finite map geometry')
                 vertices.write(record.tobytes());indices.write((faces+nv).astype('<u4').tobytes());nv+=len(pos);ni+=faces.size;nm+=1
-    report('Selecting starting position: '+m['map_name']);spawn=(0.,0.,0.) if render_only else (prepared_spawn if prepared_spawn is not None else spawn_point(m,root))
+    if render_only:spawn,heading=(0.,0.,0.),0.
     # Match the supplied exporter's environment defaults. Native sky shaders
     # remain a separate runtime feature; no geometry is synthesized here.
     environment=[.10,.36,.75,.64,.82,1.,.18,.24,.30,0.,11.,0.,18.,0.,
@@ -171,7 +116,7 @@ def write(manifest_path,output,collision,report=lambda _:None, *, render_only=Fa
                  1.,.96,.86,.42,.56,.92,1.,.18,.34,.10,1.,1.,1.]
     rails=m['grind_splines'];output.parent.mkdir(parents=True,exist_ok=True)
     with output.open('wb') as f:
-        f.write(b'SKATE14\0');u(f,0x12345678);string(f,m['map_name']);floats(f,*spawn,0.,*environment)
+        f.write(b'SKATE14\0');u(f,0x12345678);string(f,m['map_name']);floats(f,*spawn,heading,*environment)
         u(f,nm,len(ids),nv,ni,0,len(rails),0,0,0);f.write(mats.getvalue())
         write_textures(f,root,textures)
         stored(f,vertices.getvalue());stored(f,indices.getvalue());stored(f,b'')
@@ -199,6 +144,7 @@ if __name__=='__main__':
     parser.add_argument('--manifest',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--collision',type=Path,required=True)
+    parser.add_argument('--spawn',type=float,nargs=3,required=True,metavar=('X','Y','Z'),help='authored start position (map_starts.py)')
+    parser.add_argument('--heading',type=float,required=True,help='authored start yaw in radians (map_starts.py)')
     args=parser.parse_args()
-    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'vendor/university/tools/vanilla_map_extraction/tools'))
-    write(args.manifest,args.output,args.collision,lambda text:print(text,flush=True))
+    write(args.manifest,args.output,args.collision,lambda text:print(text,flush=True),spawn=tuple(args.spawn),heading=args.heading)
