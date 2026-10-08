@@ -804,7 +804,7 @@ fn labels(
                 2 => format!(
                     "FPS limit             {}",
                     if s.fps == 0 {
-                        "VSync".into()
+                        "Unlimited".into()
                     } else {
                         s.fps.to_string()
                     }
@@ -938,11 +938,16 @@ fn scroll_menu(
     }
     *previous = Some(state);
 }
-fn pace(menu: Option<Res<Menu>>, mut pacer: ResMut<FramePacer>) {
+fn pace(
+    menu: Option<Res<Menu>>,
+    benchmark: Option<Res<crate::diagnostics::performance::Performance>>,
+    mut pacer: ResMut<FramePacer>,
+) {
     let Some(menu) = menu else {
         return;
     };
-    if menu.settings.fps > 0 {
+    // A benchmark measures the uncapped frame rate, whatever limit is saved.
+    if menu.settings.fps > 0 && benchmark.is_none() {
         let period = Duration::from_secs_f64(1. / f64::from(menu.settings.fps));
         if let Some(wait) = period.checked_sub(pacer.0.elapsed()) {
             std::thread::sleep(wait);

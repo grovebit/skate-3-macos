@@ -2,8 +2,10 @@
 
 Integration branch `main` at `6c559ee`; task branch `task/perf-profile`. Apple
 M3 Max, 120 Hz built-in display, on battery (50–51%). University, saved
-settings at 100% render scale, borderless fullscreen (3456x2168 drawable),
-repository mods (Skyline Drive) and skating audio. Development builds, as
+settings at 100% render scale, borderless fullscreen (3456x2168 drawable)
+with FIFO vsync, repository mods (Skyline Drive) and skating audio. The game
+presents without vsync since this record, so its frame rates, capped at
+120 Hz, and its latency findings describe FIFO presentation. Development builds, as
 `./play.sh` runs them. Raw reports, logs, traces and the compared binaries are
 in `.local/performance-raw/2026-10-08-runtime-profile/`.
 

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Alternating SKATE_PERF_REPORT runs of game builds, launched as ./play.sh does
-# (repository mods and skating audio). Each run enters fullscreen, warms up for
-# 10 s, then samples the 60 s flythrough (diagnostics/performance.rs).
+# (repository mods and skating audio). Each run enters fullscreen with the saved
+# frame limit off, warms up for 10 s, then samples the 60 s flythrough
+# (diagnostics/performance.rs).
 #
 #   tools/performance/bench.sh OUTDIR ROUNDS 'LABEL|BINARY|ENV=VALUE ...' ...
 #

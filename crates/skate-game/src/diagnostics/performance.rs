@@ -1,6 +1,7 @@
 //! Frame timing harness. Active only when `SKATE_PERF_REPORT` names an output
-//! path: enters fullscreen, warms up, samples a fixed window while the camera
-//! flies once around the map (`flythrough`), writes JSON, then exits.
+//! path: enters fullscreen with the saved frame limit off, warms up, samples a
+//! fixed window while the camera flies once around the map (`flythrough`),
+//! writes JSON, then exits.
 //!
 //! The `Performance` resource is absent in normal play, which is why callers
 //! take it as `Option<ResMut<_>>` — instrumentation must never cost anything in
@@ -30,8 +31,8 @@ const SAMPLE: f32 = 60.0;
 /// lands at about twice the median and counts only when it measures over it;
 /// longer stalls always count.
 const HITCH_FACTOR: f32 = 2.0;
-/// Frames in the hitch median: one second at the 120 Hz FIFO presentation the
-/// harness normally measures. Warmup fills it, so every sample is classified.
+/// Frames in the hitch median: about a second at the frame rates the harness
+/// measures. Warmup fills it, so every sample is classified.
 const HITCH_HISTORY: usize = 120;
 
 /// CPU cost of the render schedule, split at phase boundaries.
@@ -331,6 +332,7 @@ fn frame_end(
     report.render_phase_ms = phases.means();
     if let Ok(window) = window.single() {
         report.window_mode = format!("{:?}", window.mode);
+        report.present_mode = format!("{:?}", window.present_mode);
         report.window_physical_size = window.physical_size().to_array();
     }
     // Every render diagnostic, so GPU pass costs land in the report without
@@ -348,7 +350,7 @@ fn frame_end(
     }
     let [extract, assets, views, queue, prepare, graph] = report.render_phase_ms;
     eprintln!(
-        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} hitches={} main={:.3} window={}x{} {}",
+        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} hitches={} main={:.3} window={}x{} {} {}",
         report.fps,
         report.frame_ms_mean,
         report.frame_ms_p99,
@@ -357,6 +359,7 @@ fn frame_end(
         report.window_physical_size[0],
         report.window_physical_size[1],
         report.window_mode,
+        report.present_mode,
     );
     eprintln!(
         "SKATE_PERF_RENDER extract={extract:.3} assets={assets:.3} views={views:.3} \
@@ -396,6 +399,7 @@ struct Report {
     /// Presentation the samples were taken at: mode and drawable pixels.
     window_mode: String,
     window_physical_size: [u32; 2],
+    present_mode: String,
     /// Render diagnostics, highest first. Includes GPU pass timings when the
     /// adapter supports timestamp queries.
     gpu: Vec<(String, f64)>,
@@ -443,6 +447,7 @@ fn summarise(samples: &[Frame]) -> Report {
         render_phase_ms: [0.0; 6],
         window_mode: String::new(),
         window_physical_size: [0; 2],
+        present_mode: String::new(),
         gpu: Vec::new(),
         samples: samples.to_vec(),
     }
@@ -474,6 +479,7 @@ fn write_report(path: &std::path::Path, report: &Report) -> std::io::Result<()> 
         "render_graph_ms_mean": report.render_phase_ms[5],
         "window_mode": report.window_mode,
         "window_physical_size": report.window_physical_size,
+        "present_mode": report.present_mode,
         "render_diagnostics": report.gpu.iter()
             .map(|(name, value)| serde_json::json!({ "name": name, "ms": value }))
             .collect::<Vec<_>>(),
