@@ -43,13 +43,17 @@ def sha(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+# Finder writes this into folders it shows; it is never converted output.
+FINDER_METADATA = '.DS_Store'
+
+
 def receipt(root, paths):
     # Symlinked spellings (/tmp and /private/tmp) must resolve the same way on
     # both sides of relative_to; also reject outputs outside the root.
     root = root.resolve()
     paths = (p.resolve() for p in paths)
     return {p.relative_to(root).as_posix(): {'size': p.stat().st_size, 'sha256': sha(p)}
-            for p in sorted(set(paths)) if p.is_file()}
+            for p in sorted(set(paths)) if p.is_file() and p.name != FINDER_METADATA}
 
 
 def valid_receipt(root, files):
@@ -57,6 +61,8 @@ def valid_receipt(root, files):
         return False
     try:
         for name, item in files.items():
+            if Path(name).name == FINDER_METADATA:
+                continue  # Receipted by earlier versions; Finder rewrites it.
             path = (root/name).resolve()
             if not path.is_relative_to(root.resolve()) or not path.is_file():
                 return False

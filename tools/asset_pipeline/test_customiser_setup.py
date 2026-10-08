@@ -68,13 +68,14 @@ class CharacterSetup(unittest.TestCase):
                 return roster_results.pop(0)
             roster_results = [[{'status': 'ready', 'key': 'pro'},
                                   {'status': 'unavailable', 'key': 'dem_bones', 'name': 'Dem Bones', 'error': 'missing head'}]]
+            base = assets/'private/customisation'
+            superseded = base/'sets'/('b'*32);superseded.mkdir(parents=True);(superseded/'old.glb').write_text('old')
             with patch('tools.asset_pipeline.customisation_catalog.prepare', side_effect=catalog), \
                  patch('tools.asset_pipeline.customisation_library.prepare', side_effect=library), \
                  patch('tools.asset_pipeline.customisation_profiles.generate', return_value=[]), \
                  patch('tools.asset_pipeline.customiser_lighting.prepare', side_effect=lighting), \
                  patch('tools.asset_pipeline.native_roster.prepare', side_effect=roster):
                 s.prepare(Path(temp)/'source', assets, lambda _: None)
-            base = assets/'private/customisation'
             current = json.loads((base/'current.json').read_text())
             generation = base/'sets'/current['set']
             for path in ('library-v3.json', 'extra-menu.json', 'native-lighting.json', 'native-roster/complete.json'):
@@ -82,8 +83,14 @@ class CharacterSetup(unittest.TestCase):
             completeness=json.loads((generation/'native-roster/complete.json').read_text())
             self.assertEqual(completeness['characters'],1)
             self.assertEqual(completeness['unavailable'][0]['key'],'dem_bones')
+            # Publishing removes superseded generations and unfinished work.
+            self.assertEqual([p.name for p in (base/'sets').iterdir()], [current['set']])
+            self.assertFalse((base/'pending.json').exists())
+            superseded.mkdir();(base/'pending.json').write_text('{}')
             with patch('tools.asset_pipeline.customisation_catalog.prepare', side_effect=AssertionError('must reuse')):
                 s.prepare(Path(temp)/'source', assets, lambda _: None)
+            self.assertEqual([p.name for p in (base/'sets').iterdir()], [current['set']])
+            self.assertFalse((base/'pending.json').exists())
 
     def test_character_only_update_reuses_core_installation(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -3,10 +3,11 @@ folder or its .iso disc image. An existing installation is refreshed: only
 asset groups whose pipeline changed are rebuilt, and player settings are kept.
 """
 from pathlib import Path
-import argparse,shutil,subprocess,sys,tempfile
+import argparse,shutil,subprocess,sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tools import xiso
 from tools.asset_pipeline.customiser_setup import install
+from tools.asset_pipeline.install import workspace
 from tools.asset_pipeline.setup_state import source_directory
 from tools.asset_pipeline.versions import installed
 
@@ -45,8 +46,7 @@ def main():
     output.mkdir(parents=True,exist_ok=True)
     try:
         if args.game_root.suffix.lower()=='.iso':
-            # Extract beside the output so the space comes from the same volume.
-            with tempfile.TemporaryDirectory(prefix='.disc-',dir=output) as temporary:
+            with workspace(output,args.game_root.stat().st_size) as temporary:
                 game=xiso.extract(args.game_root,Path(temporary)/'game',report)
                 stage=prepare(game,args.game_root,output,args.game_exe.resolve(),args.skating_audio,report)
         else:

@@ -6,9 +6,11 @@ Requires vgmstream-cli (on macOS: brew install vgmstream).
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -102,7 +104,8 @@ def prepare(game: Path, output: Path, decoder: str, banks=BANKS) -> dict:
     output.parent.mkdir(parents=True, exist_ok=True)
     manifest = {'version': 1, 'clips': [], 'limitations': LIMITATIONS}
     # Decode completely before publishing. A failed bank leaves no partial library.
-    with tempfile.TemporaryDirectory(prefix='.skating-audio-', dir=output.parent) as temporary:
+    with (tempfile.TemporaryDirectory(prefix='.skating-audio-', dir=output.parent) as temporary,
+          ThreadPoolExecutor(os.cpu_count()) as pool):
         staging = Path(temporary) / 'library'
         staging.mkdir()
         for entry in selected:
@@ -118,27 +121,32 @@ def prepare(game: Path, output: Path, decoder: str, banks=BANKS) -> dict:
             folder = staging / source.stem
             folder.mkdir()
             print(f'{source.name}: decoding {count} clips', flush=True)
-            for index in range(1, count + 1):
+
+            def clip(index):
+                # One decoder process per clip. The bank's clips run concurrently
+                # and are all collected, in order, before the next bank starts.
                 target = folder / f'{index:04d}.wav'
                 provenance = {}
                 decode_source, decode_index = source, index
                 if embedded:
                     stream = embedded[index - 1]
-                    decode_source = Path(temporary) / 'embedded.snr'
+                    decode_source = Path(temporary) / f'{source.stem}-{index:04d}.snr'
                     decode_source.write_bytes(data[stream.offset:stream.offset + stream.size])
                     decode_index = 1
                     provenance = {'embedded_offset': stream.offset, 'embedded_size': stream.size,
                                   'embedded_hash': f'{stream.source_hash:08x}'}
                 info = decoder_info(decoder, decode_source, decode_index, target)
                 pcm = validate_wav(target, info)
-                manifest['clips'].append({
+                return {
                     'bank': source.name, 'archive': 'data/audio/audiofiles.big',
                     'entry': entry.path, 'source_sha256': digest, 'subsong': index,
                     'file': target.relative_to(staging).as_posix(),
                     'decoder_version': info['version'], 'encoding': info['encoding'],
                     'source_name': info.get('streamInfo', {}).get('name'),
                     'loop': info.get('loopingInfo'), **pcm, **provenance,
-                })
+                }
+
+            manifest['clips'].extend(pool.map(clip, range(1, count + 1)))
         (staging / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
         (staging / 'index.html').write_text(audition_page(manifest['clips']), encoding='utf-8')
         # Recheck to avoid replacing an output created during conversion.

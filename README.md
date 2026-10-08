@@ -28,9 +28,10 @@ cd skate-3-macos
 ```
 
 The first run offers to install anything missing (Xcode Command Line Tools,
-Rust, uv), asks for your game in a Finder dialog, converts it and builds the
-engine: about 12 minutes on an M3 Max, longer on smaller Macs, and about 15 GB
-of disk (plus the disc's size while an `.iso` is converted). After that,
+Rust, uv), asks for your game in a Finder dialog, builds the engine and
+converts the game. On an M3 Max that takes about 12 minutes, 10 of them
+compiling; smaller Macs take longer. It needs about 15 GB of disk, plus the
+disc's size while an `.iso` is converted. After that,
 `./play.sh` starts the game in seconds, and after a `git pull` it rebuilds and
 refreshes whatever changed.
 

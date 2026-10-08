@@ -18,6 +18,19 @@ def remove_intermediate(path,root):
         raise RuntimeError('Refusing to remove a path outside conversion workspace')
     shutil.rmtree(target)
 
+# A full conversion peaks at about 5 GB of intermediate files.
+WORKSPACE_SPACE=16<<30
+
+def workspace(base,size=0):
+    """Temporary directory for intermediate files, deleted afterwards; size is
+    extra space the caller needs, such as an extracted disc. It is on the system
+    volume when that has room, since a data folder on an external drive can
+    write many times slower than the internal disk; otherwise it is in base."""
+    import tempfile
+    root=tempfile.gettempdir()
+    if shutil.disk_usage(root).free<size+WORKSPACE_SPACE:root=base
+    return tempfile.TemporaryDirectory(prefix='.conversion-',dir=root)
+
 _INSTALLATION_ID=re.compile(r'^[0-9a-f]{32}$')
 
 def active_installation_id(base):
@@ -188,7 +201,9 @@ def _install(game,base,game_exe,report,refresh=False,finalize=None,source=None):
         immutable_sets=[p.resolve() for p in sets.glob('*') if p.is_dir()
                         and all((p/(name+'-complete.json')).is_file() for name in character_stages)]
         for entry in previous[0].iterdir():
-            if entry.name in {'conversion','setup-report.json'} or setup_log_name(entry.name):continue
+            if entry.name=='setup-report.json' or setup_log_name(entry.name):continue
+            # Rebuilt maps are written fresh; a retained old map is copied below.
+            if entry.name=='maps' and 'maps' in groups:continue
             # Unchanged maps and immutable character generations share storage.
             # Mutable user data and rebuilt outputs get independent files.
             def copy_map(src,dst):
@@ -218,13 +233,13 @@ def _install(game,base,game_exe,report,refresh=False,finalize=None,source=None):
             if entry.is_dir():
                 shutil.copytree(entry,stage/entry.name,
                     ignore=ignore_rebuilt_assets if entry.name=='assets' else None,
-                    copy_function=copy_map if entry.name=='maps' and 'maps' not in groups
+                    copy_function=copy_map if entry.name=='maps'
                     else copy_asset if entry.name=='assets' else shutil.copy2)
             else:shutil.copy2(entry,stage/entry.name)
     private=stage/'assets/private';private.mkdir(parents=True,exist_ok=True)
     maps=stage/'maps';maps.mkdir(exist_ok=True)
-    work=stage/'conversion';work.mkdir()
-    with (stage/'setup.log').open('w',encoding='utf-8') as log:
+    with (stage/'setup.log').open('w',encoding='utf-8') as log, workspace(stage) as work:
+        work=Path(work)
         required_files=['default.xex']
         if 'core' in groups:required_files += ['data/big/miscload.big','data/big/miscboot.big','data/big/db.big']
         if 'character' in groups:required_files += ['data/content/createacharacter.big']
@@ -262,7 +277,7 @@ def _install(game,base,game_exe,report,refresh=False,finalize=None,source=None):
                 result=work/(archive.stem+'.json')
                 with (stage/(archive.stem+'-conversion.log')).open('w',encoding='utf-8') as map_log:
                     run(task(TOOLS/'asset_pipeline/map_job.py','--archive',archive,'--stage',stage,
-                             '--game-exe',game_exe,'--result',result),map_log,report)
+                             '--work',work,'--game-exe',game_exe,'--result',result),map_log,report)
                 return json.loads(result.read_text(encoding='utf-8'))
             completed={}
             with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -293,14 +308,10 @@ def _install(game,base,game_exe,report,refresh=False,finalize=None,source=None):
                     try:run([game_exe,'--assets',stage/'assets','--map',src,'--check-assets'],log,report)
                     except CONTENT_ERRORS:continue
                     target=stage/old['path'];target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,target)
+                    if src.with_suffix('.irradiance').is_file():shutil.copy2(src.with_suffix('.irradiance'),target.with_suffix('.irradiance'))
                     catalog.append(old)
                     note(private/'map-status'/(old['name']+'-availability.json'),old['name'],
                          RuntimeError('New source map unavailable; previous map passed validation'),retained=True,report=report)
-            # Exclude invalid old retail maps from the runtime directory scan.
-            valid_paths={item['path'] for item in catalog}
-            if previous:
-                for old in json.loads((previous[0]/'maps.json').read_text()):
-                    if old['path'] not in valid_paths:(stage/old['path']).unlink(missing_ok=True)
             if not catalog:raise RuntimeError('No playable map could be prepared or recovered. Restore at least one worldDIST_*.big archive beside default.xex and retry; the previous installation has been kept.')
         report('Validating installed runtime inputs')
         run([game_exe,'--assets',stage/'assets','--test-world','--check-assets'],log,report)
@@ -312,7 +323,6 @@ def _install(game,base,game_exe,report,refresh=False,finalize=None,source=None):
             selected=settings/'default-map.json'
             if selected.is_file() and not (stage/json.loads(selected.read_text())).is_file():
                 selected.write_text(json.dumps(catalog[0]['path']))
-        remove_intermediate(work,stage)
         if finalize:finalize(stage)
         from .optional_content import summary
         warnings=summary(stage)
