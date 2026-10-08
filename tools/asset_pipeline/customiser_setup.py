@@ -83,6 +83,7 @@ def _prepare(game, assets, report=print):
                 and all((base/'sets'/saved['set']/name).is_file() for name in
                         ('library-v3.json', 'extra-menu.json', 'native-lighting.json', 'native-roster/complete.json'))
                 and cache.complete(base/'sets'/saved['set'])):
+            remove_superseded(base, saved['set'])
             return
     saved = cache.read(marker)
     if isinstance(saved.get('set'), str) and re.fullmatch('[0-9a-f]{32}', saved['set']):
@@ -144,12 +145,12 @@ def _prepare(game, assets, report=print):
     run_stage('lighting', lambda: lighting(game, assets, directory, json.loads((directory/'library-base.json').read_text())))
     report('Preparing all owned pro and special character models')
     def build_roster():
-        # Work textures were not published or receipted; discard failed work.
-        import shutil
-        if (directory/'roster-work').exists():shutil.rmtree(directory/'roster-work')
+        from .install import workspace
         (directory/'native-roster').mkdir(exist_ok=True)
-        roster = native_roster(game, assets, directory/'native-roster',
-                              directory/'database/collections.json', directory/'roster-work')
+        # Work textures are neither published nor receipted.
+        with workspace(directory) as work:
+            roster = native_roster(game, assets, directory/'native-roster',
+                                  directory/'database/collections.json', Path(work))
         unavailable = [item for item in roster if item['status'] != 'ready']
         for item in unavailable:report(f'Unavailable optional character {item["name"]}: {item["error"]}')
         (directory/'native-roster/complete.json').write_text(json.dumps({'characters': sum(item['status']=='ready' for item in roster), 'unavailable': unavailable}))
@@ -157,7 +158,17 @@ def _prepare(game, assets, report=print):
     temporary = marker.with_suffix('.tmp')
     temporary.write_text(json.dumps(dict(version=1, set=identity, fingerprint=version, source=source)))
     temporary.replace(marker)
-    pending.unlink(missing_ok=True)
+    remove_superseded(base, identity)
+
+
+def remove_superseded(base, current):
+    """Delete earlier generations and unfinished work once current is published.
+    The game reads only the current generation, and a saved outfit names asset
+    IDs rather than generation paths."""
+    import shutil
+    for path in (base/'sets').glob('*'):
+        if path.is_dir() and path.name != current:shutil.rmtree(path)
+    (base/'pending.json').unlink(missing_ok=True)
 
 
 def install(game, base, game_exe, report, refresh=False, selected=None):

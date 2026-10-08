@@ -27,7 +27,6 @@ bl_info = {
 }
 
 __VERSION__ = "3.0.0-animtest-port"
-print(f"[ABIN] abin_importer loaded, version {__VERSION__}")
 
 import math
 import struct

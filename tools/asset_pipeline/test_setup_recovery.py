@@ -138,5 +138,15 @@ class SetupRecovery(unittest.TestCase):
             self.assertFalse(valid_receipt(root,files))
             self.assertFalse(valid_receipt(root,{'../asset':files['asset']}))
 
+    def test_finder_metadata_is_not_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);asset=root/'asset';asset.write_bytes(b'good')
+            finder=root/'.DS_Store';finder.write_bytes(b'window layout')
+            files=receipt(root,[asset,finder])
+            self.assertEqual(list(files),['asset'])
+            # Older receipts listed it; Finder rewriting it must not damage them.
+            files['.DS_Store']={'size':13,'sha256':'0'*64};finder.write_bytes(b'new layout')
+            self.assertTrue(valid_receipt(root,files))
+
 
 if __name__=='__main__':unittest.main()

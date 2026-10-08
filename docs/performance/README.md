@@ -7,6 +7,7 @@ was squashed, kept locally on the `backup/pre-squash-6a9c7db` branch.
 
 | Record | Summary |
 | --- | --- |
+| [2026-10-08-setup-conversion](2026-10-08-setup-conversion.md) | Game conversion was mostly single-threaded or waiting on a slow data drive; parallel stages and a temporary folder on the startup disk cut it from 340 s to 120 s. |
 | [2026-10-07-presentation-fifo](2026-10-07-presentation-fifo.md) | Frames waited on drawable acquisition; FIFO vsync gives a steady 119.7 FPS instead of 78 FPS with uneven pacing. |
 | [2026-10-05-native-only-timing](2026-10-05-native-only-timing.md) | Four minutes of native Metal timing without Instruments; slow intervals persist without a profiler attached. |
 | [2026-10-05-drawable-acquisition-stall](2026-10-05-drawable-acquisition-stall.md) | A focused slowdown traced to `nextDrawable` waits rather than CPU work. |

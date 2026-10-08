@@ -24,10 +24,13 @@ data is prepared. It has no packaged release.
 ```
 
 The first run converts the game into the gitignored `data/` folder with the
-asset pipeline in `tools/asset_pipeline`: a few minutes and about 3.5 GB, plus
-the disc's size while an `.iso` is extracted to a temporary folder
-(`tools/xiso.py`, no extra tools). Setup validates every map by running the
-development build, which `play.sh` builds first. `installation.json` records the
+asset pipeline in `tools/asset_pipeline`. It takes about 2 minutes on an M3 Max
+and uses about 3 GB. Intermediate files peak at about 5 GB. An `.iso` adds its size,
+because it is extracted first (`tools/xiso.py`, no extra tools). Intermediate
+files go to the system's temporary folder when the startup disk has room,
+because an external data drive can be much slower to write; otherwise they go
+beside `data/`. Setup validates every map by running the development build,
+which `play.sh` builds first. `installation.json` records the
 folder or `.iso` you chose; when a later version converts differently, the next
 `./play.sh` refreshes only the affected asset groups from it and keeps your
 settings. Naming a game always reruns that refresh.
