@@ -14,7 +14,8 @@
 # changes GPU clocks.
 set -u
 repo=$(cd "$(dirname "$0")/../.." && pwd)
-inst="$repo/data/$(plutil -extract directory raw -o - "$repo/data/installation.json")"
+inst="$repo/data/$(plutil -extract directory raw -o - "$repo/data/installation.json" 2>/dev/null)" ||
+    { echo "No converted game in $repo/data: run ./play.sh in this checkout first" >&2; exit 1; }
 out=$1; rounds=$2; shift 2
 mkdir -p "$out"
 for round in $(seq 1 "$rounds"); do
