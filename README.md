@@ -27,9 +27,10 @@ cd skate-3-macos
 ./play.sh
 ```
 
-The first run offers to install anything missing (Xcode Command Line Tools,
-Rust, uv), asks for your game in a Finder dialog, builds the engine and
-converts the game. On an M3 Max that takes about 12 minutes, 10 of them
+The first run offers to install the Xcode Command Line Tools and Rust if they
+are missing, then fetches pinned versions of the other tools, so every Mac sets
+up with the same ones. It asks for your game in a Finder dialog, builds the
+engine and converts the game. On an M3 Max that takes about 12 minutes, 10 of them
 compiling; smaller Macs take longer. It needs about 15 GB of disk, plus the
 disc's size while an `.iso` is converted. After that,
 `./play.sh` starts the game in seconds, and after a `git pull` it rebuilds and
@@ -65,7 +66,7 @@ environments, audio library) are created locally and never committed.
 ```sh
 cargo build               # the development build play.sh starts
 cargo test --workspace    # Rust tests, including shader validation
-uv pip install --python .local/venv-setup/bin/python -r tools/requirements-research.txt
+"$(tools/pinned_tool.sh uv)" pip install --python .local/venv-setup/bin/python -r tools/requirements-research.txt
 .local/venv-setup/bin/python -m unittest $(git ls-files 'tools/test_*.py' \
     'tools/asset_pipeline/test_*.py' 'tools/audio/test_*.py' | sed 's/\.py$//; s#/#.#g')
 ```

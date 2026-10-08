@@ -18,18 +18,23 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # The Rust version of rust-toolchain.toml.
+      - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: tests
           cache-on-failure: true
       - uses: mozilla-actions/sccache-action@v0.0.11
-      # The setup requirements pin a numpy release with no wheels after 3.13.
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+      # The same uv, Python and setup requirements as play.sh.
       - name: Install setup and research requirements
-        run: python -m pip install -r tools/requirements-setup.txt -r tools/requirements-research.txt
+        run: |
+          python=$(tools/pinned_tool.sh python)
+          uv=$(tools/pinned_tool.sh uv)
+          "$uv" pip install --python "$python" -r tools/requirements-research.txt
+          dirname "$python" >> "$GITHUB_PATH"
+      # Setup builds the sound decoder from source on every Mac.
+      - name: Build the pinned vgmstream
+        run: tools/pinned_tool.sh vgmstream
       # tools/ uses namespace packages, which unittest discovery skips.
       - name: Test Python tools
         run: python -m unittest -v $(git ls-files 'tools/test_*.py' 'tools/asset_pipeline/test_*.py' 'tools/audio/test_*.py' | sed 's/\.py$//; s#/#.#g')

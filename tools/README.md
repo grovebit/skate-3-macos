@@ -1,16 +1,24 @@
 # Tools
 
 Python tools that convert your copy of Skate 3 for the engine, plus audio
-research and performance analysis. `play.sh` creates their environment in
-`.local/venv-setup` (Python 3.13 with [`requirements-setup.txt`](requirements-setup.txt)).
+research and performance analysis. Their environment is `.local/venv-setup`,
+which `play.sh` creates with [`pinned_tool.sh`](pinned_tool.sh): the Python
+version in [`.python-version`](../.python-version) and the hash-locked
+[`requirements-setup.txt`](requirements-setup.txt). To change a package, edit
+its version there and rerun the command in the file's header.
 Research tools and the Python tests also need
 [`requirements-research.txt`](requirements-research.txt) (capstone).
 It is a separate file because `requirements-setup.txt` is part of the
-conversion fingerprints: changing it makes every player convert the game again.
+conversion fingerprints: changing it makes every player convert the game again,
+unless `asset_pipeline/pipeline-equivalence.json` records the change as equivalent.
 
 ```sh
-uv pip install --python .local/venv-setup/bin/python -r tools/requirements-research.txt
+"$(tools/pinned_tool.sh uv)" pip install --python .local/venv-setup/bin/python -r tools/requirements-research.txt
 ```
+
+`pinned_tool.sh` also provides the pinned uv and vgmstream; it prints the
+tool's path after downloading or building it once. Downloads must match their
+pinned SHA-256.
 
 ## Game data conversion
 
@@ -51,7 +59,9 @@ Other folders:
 (`prepare_skating_audio.py`, `prepare_impact_audio.py`,
 `prepare_collision_mix.py`), the research checks and native-code verifiers
 (`check_*`, `inspect_*`, `verify_*`) and their tests. The research they support
-is in [`docs/audio/`](../docs/audio/README.md).
+is in [`docs/audio/`](../docs/audio/README.md). The library builders decode with
+the vgmstream that `tools/pinned_tool.sh vgmstream` builds: vgmstream r2117 with
+a static FFmpeg 9.0.2, from checksummed sources.
 
 Each `verify_*` tool replays original routines from your own `default.xex` in
 `native_replay/ppc_interp.py` and compares the results with the production Rust
