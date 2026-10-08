@@ -6,6 +6,7 @@
 //! a shipping session.
 use bevy::prelude::*;
 use std::{
+    collections::VecDeque,
     path::PathBuf,
     sync::{
         Arc,
@@ -19,9 +20,15 @@ use std::{
 const WARMUP: f32 = 10.0;
 /// Seconds of samples retained.
 const SAMPLE: f32 = 15.0;
-/// A frame slower than this is counted separately: at 300 FPS the budget is
-/// 3.33 ms, so 8 ms is an unambiguous hitch rather than jitter.
-const HITCH_MS: f32 = 8.0;
+/// A hitch is a frame longer than this many medians of the frames before it,
+/// upstream's `frame_timing` rule. A fixed threshold cannot work under vsync:
+/// every 120 Hz FIFO frame takes about 8.33 ms. A frame that misses one vblank
+/// lands at about twice the median and counts only when it measures over it;
+/// longer stalls always count.
+const HITCH_FACTOR: f32 = 2.0;
+/// Frames in the hitch median: one second at the 120 Hz FIFO presentation the
+/// harness normally measures. Warmup fills it, so every sample is classified.
+const HITCH_HISTORY: usize = 120;
 
 /// Draw statistics for one frame, owned by the main world.
 ///
@@ -121,6 +128,35 @@ struct Frame {
     physics_ms: f32,
     draws: u32,
     triangles: u32,
+    hitch: bool,
+}
+
+/// The last `HITCH_HISTORY` frame times, recorded from the first frame.
+#[derive(Default)]
+struct HitchHistory {
+    frames: VecDeque<f32>,
+    scratch: Vec<f32>,
+}
+
+impl HitchHistory {
+    /// Whether `frame_ms` exceeds `HITCH_FACTOR` times the nearest-rank median
+    /// of the frames before it, then records it. False until the history fills.
+    fn observe(&mut self, frame_ms: f32) -> bool {
+        let full = self.frames.len() == HITCH_HISTORY;
+        let hitch = full && {
+            self.scratch.clear();
+            self.scratch.extend(&self.frames);
+            // Lower middle for an even count, matching `percentile(0.50)`.
+            let middle = self.scratch.len().div_ceil(2) - 1;
+            let (_, median, _) = self.scratch.select_nth_unstable_by(middle, f32::total_cmp);
+            frame_ms > HITCH_FACTOR * *median
+        };
+        if full {
+            self.frames.pop_front();
+        }
+        self.frames.push_back(frame_ms);
+        hitch
+    }
 }
 
 #[derive(Resource)]
@@ -130,6 +166,7 @@ pub(crate) struct Performance {
     frame_started: Option<Instant>,
     main_elapsed: Duration,
     physics_elapsed: Duration,
+    hitches: HitchHistory,
     samples: Vec<Frame>,
     sampling: bool,
     finished: bool,
@@ -143,6 +180,7 @@ impl Performance {
             frame_started: None,
             main_elapsed: Duration::ZERO,
             physics_elapsed: Duration::ZERO,
+            hitches: HitchHistory::default(),
             // 15 s at an optimistic 600 FPS; growth beyond this is harmless.
             samples: Vec::with_capacity(9_000),
             sampling: false,
@@ -261,6 +299,10 @@ fn frame_end(
     if performance.finished {
         return;
     }
+    // Wall-clock delta rather than the frame_begin instant: it includes the
+    // presentation wait, which is what the player actually experiences.
+    let total_ms = time.delta().as_secs_f32() * 1000.0;
+    let hitch = performance.hitches.observe(total_ms);
     let elapsed = performance.started.elapsed().as_secs_f32();
     if !performance.sampling {
         if elapsed < WARMUP {
@@ -273,9 +315,6 @@ fn frame_end(
         info!("SKATE_PERF warmup complete, sampling {SAMPLE}s");
     }
 
-    // Wall-clock delta rather than the frame_begin instant: it includes the
-    // presentation wait, which is what the player actually experiences.
-    let total_ms = time.delta().as_secs_f32() * 1000.0;
     let main_ms = performance
         .frame_started
         .map_or(0.0, |start| start.elapsed().as_secs_f32() * 1000.0);
@@ -286,6 +325,7 @@ fn frame_end(
         physics_ms,
         draws: draws.total_draws(),
         triangles: draws.world_triangles + draws.mod_triangles,
+        hitch,
     });
 
     if elapsed < WARMUP + SAMPLE {
@@ -309,10 +349,11 @@ fn frame_end(
     }
     let [extract, assets, views, queue, prepare, graph] = report.render_phase_ms;
     eprintln!(
-        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} main={:.3} draws={} triangles={}",
+        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} hitches={} main={:.3} draws={} triangles={}",
         report.fps,
         report.frame_ms_mean,
         report.frame_ms_p99,
+        report.hitch_frames,
         report.main_schedule_ms_mean,
         report.draw_calls,
         report.triangles
@@ -347,7 +388,7 @@ struct Report {
     frame_ms_p95: f32,
     frame_ms_p99: f32,
     frame_ms_max: f32,
-    frames_over_hitch: usize,
+    hitch_frames: usize,
     main_schedule_ms_mean: f32,
     physics_ms_mean: f32,
     draw_calls: u32,
@@ -395,7 +436,7 @@ fn summarise(samples: &[Frame], draws: &DrawStats) -> Report {
         frame_ms_p95: percentile(0.95),
         frame_ms_p99: percentile(0.99),
         frame_ms_max: sorted.last().copied().unwrap_or(0.0),
-        frames_over_hitch: samples.iter().filter(|f| f.total_ms > HITCH_MS).count(),
+        hitch_frames: samples.iter().filter(|f| f.hitch).count(),
         main_schedule_ms_mean: mean(&samples.iter().map(|f| f.main_ms).collect::<Vec<_>>()),
         physics_ms_mean: mean(&samples.iter().map(|f| f.physics_ms).collect::<Vec<_>>()),
         draw_calls: draws.total_draws(),
@@ -419,7 +460,9 @@ fn write_report(path: &std::path::Path, report: &Report) -> std::io::Result<()> 
         "frame_ms_p95": report.frame_ms_p95,
         "frame_ms_p99": report.frame_ms_p99,
         "frame_ms_max": report.frame_ms_max,
-        "frames_over_8ms": report.frames_over_hitch,
+        "hitch_frames": report.hitch_frames,
+        "hitch_factor": HITCH_FACTOR,
+        "hitch_history_frames": HITCH_HISTORY,
         "main_schedule_ms_mean": report.main_schedule_ms_mean,
         "physics_ms_mean": report.physics_ms_mean,
         "draw_calls": report.draw_calls,
@@ -441,6 +484,7 @@ fn write_report(path: &std::path::Path, report: &Report) -> std::io::Result<()> 
             "physics_ms": f.physics_ms,
             "draws": f.draws,
             "triangles": f.triangles,
+            "hitch": f.hitch,
         })).collect::<Vec<_>>(),
     });
     std::fs::write(path, serde_json::to_vec_pretty(&json)?)
@@ -481,11 +525,63 @@ mod tests {
         assert!((report.fps - 300.0).abs() < 1.0, "fps={}", report.fps);
     }
 
+    /// Classifies every frame as `frame_end` does, warmup included, and keeps
+    /// the frames after the first `warmup` as samples.
+    fn sampled(frames: &[f32], warmup: usize) -> Vec<Frame> {
+        let mut history = HitchHistory::default();
+        let flags: Vec<bool> = frames.iter().map(|&ms| history.observe(ms)).collect();
+        frames
+            .iter()
+            .zip(flags)
+            .skip(warmup)
+            .map(|(&total_ms, hitch)| Frame { total_ms, hitch, ..default() })
+            .collect()
+    }
+
     #[test]
-    fn hitches_are_counted_against_the_8ms_threshold() {
-        let samples = vec![frame(3.0), frame(9.0), frame(8.0), frame(20.0)];
-        let report = summarise(&samples, &DrawStats::default());
-        assert_eq!(report.frames_over_hitch, 2);
+    fn fifo_jitter_is_not_a_hitch_but_a_stall_is() {
+        // 120 Hz vsync intervals jitter around 8.33 ms. The former fixed 8 ms
+        // threshold counted every other one of these frames.
+        let mut frames: Vec<f32> = (0..3 * HITCH_HISTORY)
+            .map(|i| if i % 2 == 0 { 7.9 } else { 8.8 })
+            .collect();
+        frames[2 * HITCH_HISTORY] = 25.0;
+        let report = summarise(&sampled(&frames, HITCH_HISTORY), &DrawStats::default());
+        assert_eq!(report.frames, 2 * HITCH_HISTORY);
+        assert_eq!(report.hitch_frames, 1);
+        assert!(report.samples[HITCH_HISTORY].hitch);
+    }
+
+    #[test]
+    fn a_hitch_is_strictly_over_twice_the_median_of_a_full_history() {
+        let mut history = HitchHistory::default();
+        assert!((1..HITCH_HISTORY).all(|_| !history.observe(5.0)));
+        assert!(!history.observe(1000.0), "history not yet full");
+        // The one long frame now in the history leaves the median at 5 ms.
+        assert!(!history.observe(10.0), "exactly twice the median");
+        assert!(history.observe(10.01));
+    }
+
+    #[test]
+    fn the_median_of_an_even_history_is_its_lower_middle() {
+        // As `percentile(0.50)`: 60 frames of 5 ms and 60 of 50 ms give 5 ms.
+        // The upper middle (50 ms) or the midpoint (27.5 ms) would not flag 10.01.
+        let mut history = HitchHistory::default();
+        for ms in [5.0, 50.0] {
+            for _ in 0..HITCH_HISTORY / 2 {
+                history.observe(ms);
+            }
+        }
+        assert!(history.observe(10.01));
+    }
+
+    #[test]
+    fn a_sustained_slowdown_stops_counting_once_it_is_the_median() {
+        let mut frames = vec![1000.0 / 120.0; HITCH_HISTORY];
+        frames.extend(vec![20.0; 2 * HITCH_HISTORY]);
+        let report = summarise(&sampled(&frames, HITCH_HISTORY), &DrawStats::default());
+        // Slow frames count until they fill the lower half of the history.
+        assert_eq!(report.hitch_frames, HITCH_HISTORY / 2 + 1);
     }
 
     #[test]

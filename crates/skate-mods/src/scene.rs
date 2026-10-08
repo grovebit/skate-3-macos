@@ -109,6 +109,7 @@ impl GraphicsDefinition {
 #[serde(default, deny_unknown_fields)]
 pub struct DetachOptions {
     /// Candidate FOOT positions in the attached body's local coordinates.
+    #[serde(deserialize_with = "crate::lua_list::list")]
     pub candidates:Vec<[f32;3]>, pub ground_snap:f32, pub height:f32, pub radius:f32,
 }
 impl Default for DetachOptions {

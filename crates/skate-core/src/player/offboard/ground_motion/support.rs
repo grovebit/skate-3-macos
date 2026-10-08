@@ -27,7 +27,15 @@ pub(super) fn update(s: &mut GroundMotionState, i: &GroundMotionInput) -> Frame 
             i.contact_frame_32,
         );
         let moved = transform_point(s.frame_0[3], delta);
-        let velocity = scale(sub(moved, s.frame_0[3]), reciprocal(DT));
+        let mut velocity = scale(sub(moved, s.frame_0[3]), reciprocal(DT));
+        // Host adaptation, not original logic. Base-disc 82D54240..82D5433C
+        // keeps all four lanes here and 82D54FB8 integrates the predicted
+        // velocity back into frame_0[3]. Under the host's geometric W=0 frames
+        // (see math::rotate), transform_point drops the point's W, so this
+        // lane is -W/DT of the frame position. Fed back through 2v - v', any
+        // stray W follows W[t+1] = W[t-1] - W[t] and grows about -1.618x per
+        // tick until Inf - Inf = NaN (upstream issue #10). XYZ never read it.
+        velocity[3] = 0.0;
         let acceleration = madd(
             sub(velocity, s.support_velocity_256),
             reciprocal(DT),
