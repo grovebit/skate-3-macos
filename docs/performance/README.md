@@ -19,3 +19,15 @@ was squashed, kept locally on the `backup/pre-squash-6a9c7db` branch.
 
 `crates/skate-game/src/diagnostics/performance.rs` implements the
 `SKATE_PERF_REPORT` harness used by most records.
+
+The harness counts a hitch (`hitch_frames`, and `hitch` per sample) when a
+frame is longer than twice the median of the 120 frames before it, upstream's
+frame-time rule. Records before 2026-10-08 report `frames_over_8ms` instead, a
+fixed threshold that most 120 Hz FIFO frames (about 8.33 ms) exceed: it flagged
+85–88% of the frames in each of the eight FIFO runs behind
+[2026-10-07-presentation-fifo](2026-10-07-presentation-fifo.md). Replayed over
+the same samples, with the first 120 standing in for the warmup, the new rule
+flags 1–4 frames per run. A frame that misses one vblank lands at about twice
+the median, against a threshold of 16.5–16.8 ms, so only some count: 18 of the
+55 frames between 12.5 and 20.8 ms in those runs. Longer stalls always count.
+Windows of 30 to 240 frames change the FIFO counts by at most one.
