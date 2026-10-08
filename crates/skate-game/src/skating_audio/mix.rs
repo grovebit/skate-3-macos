@@ -1,8 +1,8 @@
 //! Live MixMap volume and pitch controls for the original collision voices.
 //!
 //! Producers publish in the audio manager's input phase, in original family
-//! order: listener (8247AA48), Main objects, the local player's Contacts and
-//! PlayerPhysics, then each active collision group's 3DColPos. MixMap phases
+//! order: listener (8247AA48), Main objects, the local player's PlayerPhysics
+//! and Contacts, then each active collision group's 3DColPos. MixMap phases
 //! evaluate the collision volume/pitch cone (`skate_core::audio::collision_mix`);
 //! voices read their group's packed words afterwards.
 //!

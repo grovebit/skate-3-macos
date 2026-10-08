@@ -13,6 +13,7 @@ use skate_core::audio::{
     scalar::ScalarTables,
     voice,
 };
+use skate_core::point_graph::PointGraph;
 use std::{collections::HashMap, path::Path};
 
 /// Every packed volume slot at its maximum level. Live levels never exceed
@@ -74,12 +75,18 @@ struct VolumeEntry {
 #[derive(Deserialize)]
 struct SettingsEntry {
     cooldown: i32,
-    /// Older owned exports keep deck playback on the provisional path.
-    #[serde(default)]
-    board_cooldown: Option<i32>,
+    board_cooldown: i32,
+    /// Exported only with an `aud_rails/default` row.
     #[serde(default)]
     grind_bands: Option<[f32; 2]>,
     bands: [f32; 10],
+    speed_graph: GraphEntry,
+}
+/// `aud_collisions/default` `Hash_8B164823E008749C` arrays +10 and +30.
+#[derive(Deserialize)]
+struct GraphEntry {
+    x: [f32; 8],
+    y: [f32; 8],
 }
 #[derive(Deserialize)]
 struct EventEntry {
@@ -170,8 +177,10 @@ impl MixData {
 pub(super) struct CollisionBank {
     pub materials: Materials,
     pub settings: BodySettings,
-    pub board_cooldown: Option<i32>,
+    pub board_cooldown: i32,
     pub grind_bands: Option<[f32; 2]>,
+    /// PlayerPhysics graph for the body block (8249F794..8249F7CC).
+    pub speed_graph: PointGraph<8>,
     controls: Vec<Option<Controls>>,
     classes: [u8; 95],
     events: HashMap<(u8, u32), EventClips>,
@@ -213,7 +222,9 @@ impl CollisionBank {
         let root = root.join("material-impacts");
         let bytes = skate_mods::read_bounded(&root, "collisions.json", 2 * 1024 * 1024).ok()?;
         let Ok(manifest) = serde_json::from_slice::<Manifest>(&bytes) else {
-            warn!("Skating audio: invalid collisions.json; body impacts stay provisional");
+            warn!(
+                "Skating audio: invalid or outdated collisions.json (python3 -m tools.audio.prepare_impact_audio); body impacts stay provisional"
+            );
             return None;
         };
         // Checked before any clip is decoded: the voices cannot play without it.
@@ -245,7 +256,7 @@ impl CollisionBank {
         mut read: impl FnMut(&str) -> Option<Vec<u8>>,
         assets: &mut Assets<AudioSource>,
     ) -> Option<Self> {
-        if manifest.version != 1
+        if manifest.version != 2
             || manifest.banks.len() > 255
             || manifest.materials.len() != ABSENT as usize
             || manifest.surface_classes.len() != 95
@@ -278,9 +289,19 @@ impl CollisionBank {
         // Contacts +128..+14C order: torso and head bonecrack, bonesnap,
         // then soft and medium facehit, each as lower/upper.
         let bands = manifest.settings.bands;
-        if !bands.iter().all(|v| v.is_finite()) {
+        let graph = &manifest.settings.speed_graph;
+        if !bands
+            .iter()
+            .chain(&graph.x)
+            .chain(&graph.y)
+            .all(|v| v.is_finite())
+        {
             return None;
         }
+        let speed_graph = PointGraph {
+            x: graph.x,
+            y: graph.y,
+        };
         let pair = |i: usize| [bands[i], bands[i + 1]];
         let settings = BodySettings {
             cooldown: manifest.settings.cooldown,
@@ -331,14 +352,19 @@ impl CollisionBank {
             }
         }
         info!(
-            "Skating audio: original collision bank loaded with {} events",
-            events.len()
+            "Skating audio: original collision bank loaded with {} events; body speed graph x{} at {} to x{} from {}",
+            events.len(),
+            speed_graph.y[0],
+            speed_graph.x[0],
+            speed_graph.y[7],
+            speed_graph.x[7]
         );
         Some(Self {
             materials: Materials::new(profiles, manifest.surface_classes.clone().try_into().ok()?)?,
             settings,
             board_cooldown: manifest.settings.board_cooldown,
             grind_bands: manifest.settings.grind_bands,
+            speed_graph,
             controls,
             classes: manifest.surface_classes.try_into().ok()?,
             events,
@@ -706,8 +732,12 @@ mod tests {
                 facehit_soft: [0.05, 0.3],
                 facehit_medium: [0.3, 0.55],
             },
-            board_cooldown: Some(6),
+            board_cooldown: 6,
             grind_bands: Some([0.25, 0.5]),
+            speed_graph: PointGraph {
+                x: [0., 0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75],
+                y: [1., 1.5, 2., 2.5, 3., 3.5, 4., 5.],
+            },
             controls,
             classes,
             events,
@@ -753,11 +783,24 @@ mod tests {
     }
 
     #[test]
-    fn older_settings_keep_deck_on_the_provisional_path() {
-        let settings: SettingsEntry =
-            serde_json::from_str(r#"{"cooldown":15,"bands":[0,0,0,0,0,0,0,0,0,0]}"#).unwrap();
-        assert_eq!(settings.board_cooldown, None);
+    fn settings_require_the_board_cooldown_and_speed_graph() {
+        let graph = r#""speed_graph":{"x":[0,1,2,3,4,5,6,7],"y":[1,1,1,1,1,1,1,5]}"#;
+        let bands = r#""bands":[0,0,0,0,0,0,0,0,0,0]"#;
+        let settings: SettingsEntry = serde_json::from_str(&format!(
+            r#"{{"cooldown":15,"board_cooldown":6,{bands},{graph}}}"#
+        ))
+        .unwrap();
         assert_eq!(settings.grind_bands, None);
+        assert_eq!(settings.speed_graph.y[7], 5.);
+        for missing in [
+            format!(r#"{{"cooldown":15,{bands},{graph}}}"#),
+            format!(r#"{{"cooldown":15,"board_cooldown":6,{bands}}}"#),
+        ] {
+            assert!(
+                serde_json::from_str::<SettingsEntry>(&missing).is_err(),
+                "{missing}"
+            );
+        }
     }
 
     #[test]
@@ -769,9 +812,12 @@ mod tests {
         let mut assets = Assets::<AudioSource>::default();
         let (bank, _) = CollisionBank::load(Path::new(&root), &mut assets).expect("collision bank");
         assert_eq!(bank.settings.cooldown, 15);
-        assert_eq!(bank.board_cooldown, Some(6));
+        assert_eq!(bank.board_cooldown, 6);
         assert_eq!(bank.grind_bands, Some([0.25, 0.5]));
         assert_eq!(bank.settings.head_bonecrack, [0.75, 1.25]);
+        assert_eq!(bank.speed_graph.evaluate(0.), 1.);
+        assert_eq!(bank.speed_graph.evaluate(0.5).to_bits(), 0x3FE5_2E58);
+        assert_eq!(bank.speed_graph.evaluate(1.), 5.);
         for controls in bank.controls.iter().flatten() {
             let events = controls.events;
             for event in events
@@ -789,7 +835,8 @@ mod tests {
         }
         let mut records = 0;
         for tag in 0..=0x91 {
-            for strength in [0.003, 0.08, 0.3, 0.7, 1.] {
+            // The speed graph scales published strengths by up to 5.
+            for strength in [0.003, 0.08, 0.3, 0.7, 1., 2.5, 5.] {
                 let frame = BodyFrame {
                     strengths: [strength; REGIONS],
                     surface_tags: [tag; REGIONS],
@@ -826,7 +873,7 @@ mod tests {
                         owner: (0, false),
                     };
                     let update = skate_core::audio::deck_impact::DeckImpacts::default()
-                        .update(&frame, &bank.materials, bank.board_cooldown.unwrap())
+                        .update(&frame, &bank.materials, bank.board_cooldown)
                         .unwrap();
                     for record in update {
                         for side in 0..2 {

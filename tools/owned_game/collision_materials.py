@@ -6,6 +6,7 @@ Each 16-byte entry stores the bank in word +00 and the aud_material key in
 snow and ice tags use grass. They are audio material IDs, not the collision-tag
 names in prepare_impact_audio.SURFACES. Event fields follow 82484638..824849C4.
 """
+import math
 import struct
 
 # (aud_material key, bank) for IDs 0x00..0x8E. Bank -1 marks the empty entry.
@@ -70,6 +71,9 @@ BANDS = ('Hash_AFA4B5090F1BCF36', 'Hash_00960FEDB3EFEE9C', 'Hash_D12003A60E987B9
          'Hash_FA2AA5A0C0481D00', 'Hash_3695327CFB5E1AC3', 'Hash_35FEE8A95523D812',
          'Hash_076E9081CA1759E9', 'Hash_DF539915EB7E883E', 'Hash_8E3025BAA686F721',
          'Hash_504D3B73505972D4')
+# The layout's only field, at offset 0. Publisher 8249F794..8249F7CC passes its
+# x (+10) and y (+30) arrays to 8246FD40; the header words +00..+0C are unread.
+SPEED_GRAPH = 'Hash_8B164823E008749C'
 
 
 def _scalar(row, field, expected_type, fmt):
@@ -80,6 +84,19 @@ def _scalar(row, field, expected_type, fmt):
     if len(raw) != 4:
         raise ValueError(f"{row['key']}: invalid {field}")
     return struct.unpack(fmt, raw)[0]
+
+
+def _speed_graph(row):
+    value = row['fields'].get(SPEED_GRAPH)
+    if value is None or value['type'] != 'Sk8::PointNegGraphData8':
+        raise ValueError(f"{row['key']}: missing or mistyped {SPEED_GRAPH}")
+    raw = bytes.fromhex(value['data'])
+    if len(raw) != 80:
+        raise ValueError(f"{row['key']}: invalid {SPEED_GRAPH}")
+    words = struct.unpack('>20f', raw)
+    if not all(map(math.isfinite, words)):
+        raise ValueError(f"{row['key']}: nonfinite {SPEED_GRAPH}")
+    return {'x': list(words[4:12]), 'y': list(words[12:20])}
 
 
 def collision_materials(rows):
@@ -118,7 +135,8 @@ def body_settings(rows):
     row = defaults[0]
     settings = {'cooldown': _scalar(row, COOLDOWN, 'EA::Reflection::Int32', '>i'),
             'board_cooldown': _scalar(row, BOARD_COOLDOWN, 'EA::Reflection::Int32', '>i'),
-            'bands': [_scalar(row, field, 'EA::Reflection::Float', '>f') for field in BANDS]}
+            'bands': [_scalar(row, field, 'EA::Reflection::Float', '>f') for field in BANDS],
+            'speed_graph': _speed_graph(row)}
     rails = [r for r in rows if r['class'] == 'aud_rails' and r['key'] == 'default']
     if len(rails) > 1:
         raise ValueError('Expected at most one aud_rails/default row')

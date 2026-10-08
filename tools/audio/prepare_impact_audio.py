@@ -7,7 +7,8 @@ envelopes, pitch and randomization modes are not reconstructed.
 
 collisions.json carries every material ID's original bank, event matrix and
 voice controls (82FD1930, 82484410, 82484638), plus the authored body-loop
-settings, with one rendered route per referenced bank event.
+settings and PlayerPhysics speed graph, with one rendered route per referenced
+bank event.
 """
 from __future__ import annotations
 
@@ -217,8 +218,9 @@ def prepare(game: Path, output: Path, decoder: str) -> dict:
                         'Unmapped surfaces use the existing generic impact fallback.']}
         (staging / 'routes.json').write_text(json.dumps(manifest, indent=2) + '\n')
         collision_rendered, collision_decoded = used(collision_routes)
+        # Version 2 adds settings.speed_graph, which the runtime requires.
         collisions = {
-            'version': 1, 'sources': provenance, 'banks': list(BANKS), 'materials': collision,
+            'version': 2, 'sources': provenance, 'banks': list(BANKS), 'materials': collision,
             'rendered': collision_rendered, 'decoded': collision_decoded,
             'settings': settings, 'surface_classes': counterpart_classes,
             'events': {bank: {str(event): {key: route[key] for key in ('clips', 'gains', 'source_layers')}

@@ -200,15 +200,20 @@ fn report_collision_mix(starts: &[crate::skating_audio::ProbeStart]) {
     }
 }
 
-/// Audio snapshot +1F0 strengths and +230 tags for regions 0..6, +2A4 and the
-/// +250/+251 specific-contact flags, as skating_audio::update_body reads them.
+/// Body-loop inputs for regions 0..6: the published strengths before the
+/// PlayerPhysics speed graph (packet +140) and snapshot +230 tags, packet +6C
+/// (COM speed), +2A4 and the +250/+251 specific-contact flags. The body loop
+/// in skating_audio::update_body reads the speed-graph products.
 fn body_audio_inputs(skater: &SkaterRuntime, tick: usize) -> serde_json::Value {
     let feedback = &skater.collision_feedback;
     let published = &feedback.audio.published[..6];
+    let velocity = skater.player_input.physical.reckoning.vector_16;
+    let speed = skate_core::audio::player_physics::com_speed(velocity.map(f32::from_bits));
     serde_json::json!({
         "tick": tick,
         "state": format!("{:?}", skater.player_state.current()),
         "strengths": published.iter().map(|c| c.intensity.to_bits()).collect::<Vec<_>>(),
+        "com_speed": speed.to_bits(),
         "tags": published.iter().map(|c| c.material).collect::<Vec<_>>(),
         "wipeout": skater.player_input.processed.flags_2468 & (1 << 18) != 0,
         "groin": feedback.specific[0].current,

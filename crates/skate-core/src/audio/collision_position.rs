@@ -36,7 +36,7 @@ fn refined_reciprocal(value: f32) -> f32 {
 }
 
 /// Length from the refined estimate; a zero square selects zero.
-fn length(square: f32) -> f32 {
+pub(super) fn length(square: f32) -> f32 {
     if square == 0.0 {
         0.0
     } else {

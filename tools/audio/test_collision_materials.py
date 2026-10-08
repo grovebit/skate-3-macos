@@ -1,9 +1,20 @@
 import copy
+import math
 import struct
 import unittest
 
 from tools.owned_game.collision_materials import (
-    AUDIO_MATERIALS, BANKS, BANDS, COOLDOWN, BOARD_COOLDOWN, EVENT_FIELDS, body_settings, collision_materials)
+    AUDIO_MATERIALS, BANKS, BANDS, COOLDOWN, BOARD_COOLDOWN, EVENT_FIELDS, SPEED_GRAPH, body_settings,
+    collision_materials)
+
+# Synthetic Sk8::PointNegGraphData8: header words, then x and y.
+SPEED_HEADER = [0.0, 1.0, 1.0, 5.0]
+SPEED_X = [i / 8 for i in range(8)]
+SPEED_Y = [1 + i / 2 for i in range(8)]
+
+
+def graph_field(words):
+    return {'type': 'Sk8::PointNegGraphData8', 'data': struct.pack('>20f', *words).hex()}
 
 
 def fixture():
@@ -22,6 +33,7 @@ def fixture():
     settings[BOARD_COOLDOWN] = {'type': 'EA::Reflection::Int32', 'data': '00000006'}
     settings.update({field: {'type': 'EA::Reflection::Float', 'data': struct.pack('>f', i / 4).hex()}
                      for i, field in enumerate(BANDS)})
+    settings[SPEED_GRAPH] = graph_field(SPEED_HEADER + SPEED_X + SPEED_Y)
     return [*rows.values(), {'class': 'aud_collisions', 'key': 'default', 'fields': settings}]
 
 
@@ -62,6 +74,21 @@ class CollisionMaterialTests(unittest.TestCase):
         self.assertEqual(settings['bands'], [i / 4 for i in range(10)])
         with self.assertRaises(ValueError):
             body_settings([r for r in fixture() if r['class'] != 'aud_collisions'])
+
+    def test_speed_graph_keeps_x_then_y_after_the_unread_header(self):
+        self.assertEqual(body_settings(fixture())['speed_graph'], {'x': SPEED_X, 'y': SPEED_Y})
+
+    def test_speed_graph_rejects_missing_mistyped_short_or_nonfinite_data(self):
+        for change in (
+                lambda fields: fields.pop(SPEED_GRAPH),
+                lambda fields: fields[SPEED_GRAPH].update(type='Sk8::PointGraphData8'),
+                lambda fields: fields[SPEED_GRAPH].update(data=fields[SPEED_GRAPH]['data'][:-8]),
+                lambda fields: fields.update({SPEED_GRAPH: graph_field(
+                    SPEED_HEADER + SPEED_X[:7] + [math.nan] + SPEED_Y)})):
+            rows = fixture()
+            change(rows[-1]['fields'])
+            with self.assertRaises(ValueError):
+                body_settings(rows)
 
     def test_grind_bands_require_the_authored_rail_row(self):
         rows = fixture()

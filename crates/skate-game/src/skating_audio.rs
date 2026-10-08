@@ -1,9 +1,10 @@
 //! Original decoded samples, driven by completed simulation ticks.
 //! Wheel contacts use recovered event/category tables. With `collisions.json`
 //! and its `mixmap/`, head, torso, arm and leg impacts come from the original
-//! body loop. Current exports also connect the original deck loop and grind
-//! onset. Collision voice volume follows the original MixMap controls; their
-//! pitch controllers and other foley remain provisional.
+//! body loop, fed through the PlayerPhysics speed graph, and the original deck
+//! loop and grind onset are connected. Collision voice volume follows the
+//! original MixMap controls; their pitch controllers and other foley remain
+//! provisional.
 use crate::{
     app::SimulationSet,
     physics::{GamePhysics, SkaterRuntime},
@@ -12,7 +13,7 @@ use bevy::{
     audio::{AddAudioSource, AudioSinkPlayback, Volume},
     prelude::*,
 };
-use skate_core::audio::{body_impact, clock::AudioClock, deck_impact, grind_start};
+use skate_core::audio::{body_impact, clock::AudioClock, deck_impact, grind_start, player_physics};
 use skate_core::player::state::PhysicalStateId as State;
 
 mod body_material;
@@ -89,6 +90,10 @@ struct CollisionVoice;
 #[derive(Resource, Default)]
 struct BodyAudio {
     clock: AudioClock,
+    /// Snapshot +D8. The original also resets it with the Player group
+    /// (824E6A78); the host has no producer for those triggers, so it lasts
+    /// as long as this resource, like the timers.
+    player_physics: player_physics::PlayerPhysics,
     body: body_impact::BodyImpacts,
     deck: deck_impact::DeckImpacts,
     grind: grind_start::GrindStarts,
@@ -372,8 +377,7 @@ fn sample(
         .is_some_and(|samples| samples.materials.has_wheels());
     let deck_audio = samples
         .as_ref()
-        .and_then(|samples| samples.collisions.as_ref())
-        .is_some_and(|bank| bank.board_cooldown.is_some());
+        .is_some_and(|samples| samples.collisions.is_some());
     let (mut contacts, surface) = if fresh_contacts {
         impact::contacts(&physics, &skater, wheel_audio, deck_audio)
     } else {
@@ -388,9 +392,9 @@ fn sample(
         );
     }
     if let Some(bank) = samples.as_ref().and_then(|s| s.collisions.as_ref()) {
-        // Head, torso, arm and leg channels belong to the original body loop.
-        // Trucks and feet retain their provisional paths. Deck reports are
-        // excluded by the contact observer only when the bank supports them.
+        // Head, torso, arm and leg channels belong to the original body loop,
+        // and deck reports, excluded by the contact observer, to the deck
+        // loop. Trucks and feet retain their provisional paths.
         for contact in &mut contacts[1..=4] {
             *contact = default();
         }
@@ -471,8 +475,9 @@ fn sample(
 
 /// One audio-manager update (82473060). Inputs without a ported producer keep
 /// provisional values (docs/audio/body-impacts.md): the clock is driven by the
-/// host tick, the publication ratio stays at its constructed 1, and the
-/// Hall of Meat and owner inputs are off.
+/// host tick, the publication ratio stays at its constructed 1, the current
+/// physics publication stands in for the selected packet, and the Hall of
+/// Meat and owner inputs are off.
 fn update_body(
     audio: &mut BodyAudio,
     bank: &collisions::CollisionBank,
@@ -506,9 +511,11 @@ fn update_body(
     }
 }
 
-/// Input phase: listener and Main family, then the Player family's Contacts
-/// update (824A60B0: 824A6F70, body 824AA020, deck 824AAE98) with its
-/// immediate group activations, then 3DColPos for active collision groups.
+/// Input phase: listener and Main family, then the Player group: its
+/// PlayerPhysics publication (8249ECA0) before its Contacts update (824A60B0:
+/// 824A6F70, body 824AA020, deck 824AAE98) with immediate group activations,
+/// as 828B7C58 updates controllers before objects. Then 3DColPos for active
+/// collision groups.
 fn input_phase(
     audio: &mut BodyAudio,
     bank: &collisions::CollisionBank,
@@ -521,12 +528,19 @@ fn input_phase(
         state.publish_main(elapsed, listener);
     }
     // Snapshot +30 (packet +00): SystemReckoning +40, the raw centre of mass.
-    let body_position = skater
-        .player_input
-        .physical
-        .reckoning
-        .vector_64
-        .map(f32::from_bits);
+    let reckoning = &skater.player_input.physical.reckoning;
+    let body_position = reckoning.vector_64.map(f32::from_bits);
+    // Snapshot +1F0 (packet +140) scaled by the graph at the previous
+    // publication's packet +6C, |SystemReckoning +10|.
+    let strengths = audio.player_physics.publish(
+        skater
+            .collision_feedback
+            .audio
+            .published
+            .map(|contact| contact.intensity),
+        player_physics::com_speed(reckoning.vector_16.map(f32::from_bits)),
+        &bank.speed_graph,
+    );
     if let Some(bands) = bank.grind_bands {
         match audio.grind.input(
             skater.player_input.grind_audio,
@@ -551,7 +565,8 @@ fn input_phase(
     }
     let published = &skater.collision_feedback.audio.published;
     let frame = body_impact::BodyFrame {
-        strengths: std::array::from_fn(|i| published[i].intensity),
+        // Regions 6 and 7 (feet) are scaled too; no ported consumer reads them.
+        strengths: std::array::from_fn(|i| strengths[i]),
         surface_tags: std::array::from_fn(|i| published[i].material as i32),
         publication_ratio: mix::PUBLICATION_RATIO,
         state_2a4: skater.player_input.processed.flags_2468 & (1 << 18) != 0,
@@ -583,29 +598,30 @@ fn input_phase(
         }
         Err(_) => {}
     }
-    if let Some(cooldown) = bank.board_cooldown {
-        let deck = deck_impact::DeckFrame {
-            strength: skater.player_input.deck_audio.published,
-            surface_tag: skater.player_input.physical.collision.deck_audio_tag_12 as i32,
-            off_board: skater.player_state.current().category() == 500,
-            state_2a4: frame.state_2a4,
-            publication_ratio: frame.publication_ratio,
-            owner: frame.owner,
-        };
-        match audio.deck.update(&deck, &bank.materials, cooldown) {
-            Ok(records) => {
-                // Snapshot +90: SkateboardReckoning +90, provisionally the
-                // deck body position (layout evidence, not yet verified).
-                for record in records {
-                    audio.enqueue(record, deck_position);
-                }
+    let deck = deck_impact::DeckFrame {
+        strength: skater.player_input.deck_audio.published,
+        surface_tag: skater.player_input.physical.collision.deck_audio_tag_12 as i32,
+        off_board: skater.player_state.current().category() == 500,
+        state_2a4: frame.state_2a4,
+        publication_ratio: frame.publication_ratio,
+        owner: frame.owner,
+    };
+    match audio
+        .deck
+        .update(&deck, &bank.materials, bank.board_cooldown)
+    {
+        Ok(records) => {
+            // Snapshot +90: SkateboardReckoning +90, provisionally the
+            // deck body position (layout evidence, not yet verified).
+            for record in records {
+                audio.enqueue(record, deck_position);
             }
-            Err(error) if !audio.failed => {
-                audio.failed = true;
-                warn!("Skating audio: deck impact update rejected: {error:?}");
-            }
-            Err(_) => {}
         }
+        Err(error) if !audio.failed => {
+            audio.failed = true;
+            warn!("Skating audio: deck impact update rejected: {error:?}");
+        }
+        Err(_) => {}
     }
     let BodyAudio { mix, groups, .. } = audio;
     if let Some(state) = mix.as_mut() {
