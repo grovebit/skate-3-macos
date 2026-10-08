@@ -11,7 +11,7 @@ import struct
 import subprocess
 import tempfile
 
-from tools.native_replay import xex_image
+from tools.owned_game import xex
 from tools.native_replay.ppc_interp import Machine
 
 
@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     if not args.rustc:
         parser.error('rustc is required')
-    image = xex_image.load(args.game)
+    image = xex.load(args.game)
 
     fixtures, expected = [], []
     values = [0., .125, .5, 1., 2., struct.unpack('>f', bytes.fromhex('3f6e331d'))[0],

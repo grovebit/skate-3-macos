@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 import random
 
-from tools.native_replay import xex_image
+from tools.owned_game import xex
 from tools.native_replay.ppc_interp import Machine
 
 
@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--game', type=Path, required=True,
                         help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    image = xex_image.load(args.game)
+    image = xex.load(args.game)
 
     rng = random.Random(0x82DBA980)
     for index in range(100):

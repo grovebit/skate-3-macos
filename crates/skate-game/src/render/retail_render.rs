@@ -142,7 +142,9 @@ fn pack_slot(class: usize, layer: usize, clamp: bool) -> u32 {
 #[derive(Resource, Clone, Default, ExtractResource)]
 pub(crate) struct FrameStateData {
     pub shadow: Vec4,
+    /// `x` is the original `g_fAnimationTime.x` (`WaterAnimation`); `yzw` are unused.
     pub clock: Vec4,
+    /// The current `OceanPca` frame.
     pub pca: [Vec4; 7],
 }
 
@@ -773,7 +775,7 @@ impl MaterialTable {
         // Pass 1: decode every material into a definition plus the channel
         // texture ids it wants, so page sizing can see the whole demand.
         let mut requests: Vec<Option<Request>> = Vec::with_capacity(map.materials.len());
-        let mut unsupported = 0usize;
+        let mut unsupported = BTreeMap::<(String, u32), usize>::new();
         for material in &map.materials {
             let definition = material
                 .retail_definition
@@ -784,7 +786,9 @@ impl MaterialTable {
                 // A hole is worse than approximate shading, and there is no
                 // second world material path to fall back to (RFC 1 D8), so an
                 // unsupported family renders as plain diffuse plus lightmap.
-                unsupported += 1;
+                *unsupported
+                    .entry((definition.shader.clone(), definition.family))
+                    .or_default() += 1;
                 definition.family = 1;
             }
             requests.push(Some(Request::new(
@@ -796,9 +800,15 @@ impl MaterialTable {
                 map,
             )));
         }
-        if unsupported > 0 {
+        if !unsupported.is_empty() {
+            let shaders = unsupported
+                .iter()
+                .map(|((shader, family), count)| format!("{count} {shader} (family {family})"))
+                .collect::<Vec<_>>()
+                .join(", ");
             warn!(
-                "{unsupported} of {} world materials use an unsupported shader family and render as family 1",
+                "{} of {} world materials use an unsupported shader family and render as family 1: {shaders}",
+                unsupported.values().sum::<usize>(),
                 map.materials.len()
             );
         }
@@ -1347,9 +1357,11 @@ impl RetailScene {
     }
 }
 
+/// The original PCA water animation (tools/asset_pipeline/ocean_pca.py). Each
+/// frame holds the seven shader constants the update writes, in their native
+/// order: `g_fPcaMean`, then `g_fPcaWeightsR_0`, `R_1`, `G_0`, `G_1`, `B_0`, `B_1`.
 #[derive(serde::Deserialize, Resource)]
 struct OceanPca {
-    hz: f32,
     frames: Vec<[[f32; 4]; 7]>,
 }
 
@@ -1357,8 +1369,7 @@ fn read_pca(root: &std::path::Path) -> Option<OceanPca> {
     let pca = std::fs::read(root.join("private/ocean-pca.json"))
         .ok()
         .and_then(|b| serde_json::from_slice::<OceanPca>(&b).ok())?;
-    (pca.hz == 30.
-        && pca.frames.len() == 30
+    (pca.frames.len() == WaterAnimation::FRAMES
         && pca.frames.iter().flatten().flatten().all(|v| v.is_finite()))
     .then_some(pca)
 }
@@ -1367,6 +1378,70 @@ fn load_pca(mut commands: Commands, config: Res<crate::config::Config>) {
     if let Some(pca) = read_pca(&config.asset_root) {
         info!("RETAIL_OCEAN: loaded 30 authored PCA frames");
         commands.insert_resource(pca);
+    }
+}
+
+/// The original world-animation clock and PCA water step, from the base-disc
+/// executable (default.xex SHA-256 1db39496…; docs/rendering/water-animation.md).
+///
+/// Once per presentation update, 8276E198 reads the presentation clock as whole
+/// ticks plus a fraction and turns the change since its previous reading into
+/// `dt`, at 1/60 s a tick. It adds `dt` to `g_fAnimationTime.x`, which the
+/// water and UV-scroll shaders multiply by their authored speeds, then steps
+/// the PCA animation in 8276D3C8. That routine's own 1/60-per-call clock (830723BC) has no reader
+/// and is not ported.
+struct WaterAnimation {
+    /// `g_fAnimationTime.x`, render manager +443D0.
+    time: f32,
+    /// PCA object +144.
+    remainder: f32,
+    /// PCA object +140; the shader frame is this modulo 30 (8276D4A0).
+    frame: u16,
+    /// Manager +50/+54: the previous reading, its ticks in single precision.
+    previous: (f32, f32),
+}
+
+impl Default for WaterAnimation {
+    /// The constructor seeds the previous reading with -15 ticks (8276DC68..80),
+    /// so the first update adds nothing.
+    fn default() -> Self {
+        Self {
+            time: 0.,
+            remainder: 0.,
+            frame: 0,
+            previous: (-15., 0.),
+        }
+    }
+}
+
+impl WaterAnimation {
+    const FRAMES: usize = 30;
+
+    fn update(&mut self, ticks: u32, fraction: f32) {
+        // 8276E254..8276E2C0: a whole-tick change of 15 or more either way
+        // contributes nothing; otherwise dt is the absolute change in seconds.
+        let ticks = ticks as f32;
+        let whole = ticks - self.previous.0;
+        let dt = if whole < 15. && whole > -15. {
+            let dt = (fraction - self.previous.1 + whole) * f32::from_bits(0x3c88_8889);
+            if dt >= 0. { dt } else { -dt }
+        } else {
+            0.
+        };
+        self.previous = (ticks, fraction);
+        // 8276E2F0..8276E32C: g_fAnimationTime.x += dt.
+        self.time += dt;
+        // 8276D434..8276D46C: at most one frame per update, strictly after 1/30.
+        self.remainder += dt;
+        let period = f32::from_bits(0x3d08_8889);
+        if self.remainder > period {
+            self.remainder -= period;
+            self.frame = self.frame.wrapping_add(1);
+        }
+    }
+
+    fn pca_frame(&self) -> usize {
+        usize::from(self.frame) % Self::FRAMES
     }
 }
 
@@ -1383,18 +1458,31 @@ fn initialize_frame_state(mut buffers: ResMut<Assets<ShaderStorageBuffer>>) {
     }
 }
 
-/// Advances the animation clock and ocean PCA frame. The character lighting
-/// writes `shadow`.
+/// Runs one original water update per frame and publishes its clock and PCA
+/// frame. The character lighting writes `shadow`.
+///
+/// Host adaptation: the virtual clock stands in for the presentation clock,
+/// which the original advances only in some presentation states (826B99DC);
+/// ours pauses with the single-player menu and map transitions. It is read as
+/// 60 Hz ticks plus a fraction.
+///
+/// Provisional: the 60 Hz rate is inferred from the 1/60 s per tick the update
+/// applies, as the clock's own class is untraced. The replay time source that
+/// 8276E1E8 can select instead is not ported. The state lives as long as the
+/// app, while the original rebuilds the PCA step and previous reading (not
+/// `g_fAnimationTime`) with the presentation world; which of our map switches
+/// match that is untraced.
 fn advance_frame_state(
     mut state: ResMut<FrameStateData>,
-    time: Res<Time>,
+    time: Res<Time<Virtual>>,
     pca: Option<Res<OceanPca>>,
+    mut water: Local<WaterAnimation>,
 ) {
-    state.clock.x = time.elapsed_secs();
+    let ticks = time.elapsed_secs_f64() * 60.;
+    water.update(ticks as u32, ticks.fract() as f32);
+    state.clock.x = water.time;
     if let Some(pca) = pca {
-        let frame = ((time.elapsed_secs_f64() * f64::from(pca.hz)) as usize) % pca.frames.len();
-        state.pca = pca.frames[frame].map(Vec4::from_array);
-        state.clock.y = 1.;
+        state.pca = pca.frames[water.pca_frame()].map(Vec4::from_array);
     }
 }
 
@@ -1618,6 +1706,65 @@ mod tests {
             agrees_with_global, with_definition,
             "every diffuse binding should be a valid one-based global texture id"
         );
+    }
+
+    #[test]
+    fn water_clock_reproduces_the_original_update() {
+        let tick = f32::from_bits(0x3c88_8889);
+        let mut water = WaterAnimation::default();
+        // The constructor's -15 tick seed: the first reading adds nothing.
+        water.update(0, 0.);
+        assert_eq!((water.time, water.remainder, water.frame), (0., 0., 0));
+        // Two ticks equal the 1/30 period, which the strict test does not pass.
+        water.update(2, 0.);
+        assert_eq!(water.time.to_bits(), 0x3d08_8889);
+        assert_eq!(water.remainder.to_bits(), 0x3d08_8889);
+        assert_eq!(water.frame, 0);
+        // Half a tick more steps once and keeps the rest.
+        water.update(2, 0.5);
+        assert_eq!(water.frame, 1);
+        assert_eq!(water.remainder, (2. * tick + 0.5 * tick) - 2. * tick);
+        // A whole-tick change of 15 or more either way adds nothing, but the
+        // reading still becomes the previous one.
+        let time = water.time;
+        water.update(17, 0.5);
+        water.update(2, 0.5);
+        assert_eq!((water.time, water.frame), (time, 1));
+        // 14 ticks back count like 14 forward, and a long update still steps
+        // only one frame.
+        water.update(16, 0.5);
+        assert_eq!((water.time, water.frame), (time + 14. * tick, 2));
+        water.update(2, 0.5);
+        assert_eq!((water.time, water.frame), (time + 14. * tick + 14. * tick, 3));
+        // The counter wraps at u16; the shader frame is the counter modulo 30.
+        water.frame = u16::MAX;
+        assert_eq!(water.pca_frame(), 15);
+        water.update(3, 0.5);
+        assert_eq!((water.frame, water.pca_frame()), (0, 0));
+    }
+
+    #[test]
+    fn water_clock_follows_the_clock_but_steps_once_per_update() {
+        // One second of presentation clock, read at different host rates.
+        let run = |hz: u32| {
+            let mut water = WaterAnimation::default();
+            for i in 0..=hz {
+                let ticks = f64::from(i) * 60. / f64::from(hz);
+                water.update(ticks as u32, ticks.fract() as f32);
+            }
+            water
+        };
+        for hz in [30, 60, 120, 240] {
+            let water = run(hz);
+            assert!((water.time - 1.).abs() < 1e-4, "{hz} Hz: {}", water.time);
+            // 30 periods fit; single-precision rounding against the strict
+            // test decides whether the last one completes.
+            assert!((29..=30).contains(&water.frame), "{hz} Hz: {}", water.frame);
+        }
+        // Below 30 Hz the original falls behind: at most one frame per update.
+        let water = run(20);
+        assert!((water.time - 1.).abs() < 1e-4);
+        assert_eq!(water.frame, 20);
     }
 
     #[test]

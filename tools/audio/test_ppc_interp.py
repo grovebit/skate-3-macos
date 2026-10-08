@@ -3,7 +3,7 @@ import struct
 import unittest
 
 from tools.native_replay.ppc_interp import Machine, Unsupported
-from tools.native_replay.xex_image import IMAGE_BASE
+from tools.owned_game.xex import IMAGE_BASE
 
 BLR = 0x4E800020
 

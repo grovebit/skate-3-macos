@@ -6,6 +6,8 @@
   what the port reproduces.
 - [Performance records](performance/README.md): frame-time, GPU and CPU
   measurements.
+- Rendering notes: [water animation](rendering/water-animation.md), the
+  original PCA ocean table and the clock the water shaders read.
 - Physics notes: [quarter-pipe transition input](physics/quarter-pipe-transition-input.md)
   and [grind trick state 202](physics/grind-trick-state-202.md).
 

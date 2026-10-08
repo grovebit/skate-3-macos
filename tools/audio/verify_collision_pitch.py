@@ -13,9 +13,8 @@ import struct
 import subprocess
 import tempfile
 
-from tools.native_replay import xex_image
 from tools.native_replay.ppc_interp import Machine, f32_bits
-from tools.owned_game import collision_mix
+from tools.owned_game import collision_mix, xex
 
 
 def check(actual, expected, context):
@@ -28,11 +27,10 @@ def main():
     parser.add_argument('--game', type=Path, required=True,
                         help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    executable = xex_image.load(args.game)
+    executable = xex.load(args.game)
     data = (args.game / 'data/audio' / collision_mix.PROGRAM[0]).read_bytes()
     check(hashlib.sha256(data).hexdigest(), collision_mix.PROGRAM[1], 'program hash')
-    tables = collision_mix.executable_tables((args.game / 'default.xex').read_bytes(),
-                                             lambda xex: executable)
+    tables = collision_mix.executable_tables(executable)
     root = Path(__file__).resolve().parents[2]
     word = lambda offset: struct.unpack_from('>I', data, offset)[0]
     m = Machine(executable)

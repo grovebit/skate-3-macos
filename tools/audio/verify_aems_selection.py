@@ -8,7 +8,7 @@ import argparse
 from pathlib import Path
 import struct
 
-from tools.native_replay import xex_image
+from tools.owned_game import xex
 from tools.native_replay.ppc_interp import Machine
 
 
@@ -52,7 +52,7 @@ def main():
     parser.add_argument('--game', type=Path, required=True,
                         help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    image = xex_image.load(args.game)
+    image = xex.load(args.game)
     state_ptr, tls = 0x100000, 0x101000
 
     def machine():

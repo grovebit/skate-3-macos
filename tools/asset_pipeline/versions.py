@@ -18,7 +18,7 @@ SOURCES = {
                   'asset_pipeline/character*.py', 'asset_pipeline/retail_character.py',
                   'vendor/skate3_anim/abin_importer.py', 'vendor/skate3_anim/rx2_skeleton.py'),
     'environment': PARSERS + ('asset_pipeline/optional_content.py', 'asset_pipeline/sky.py', 'asset_pipeline/backdrop.py',
-                  'asset_pipeline/render_parameters.py', 'asset_pipeline/teleports.py',
+                  'asset_pipeline/render_parameters.py', 'asset_pipeline/ocean_pca.py', 'asset_pipeline/teleports.py',
                   'asset_pipeline/environment.py', 'asset_pipeline/map_writer.py',
                   'asset_pipeline/retail_material.py', 'asset_pipeline/irradiance.py'),
     'maps': PARSERS + ('asset_pipeline/optional_content.py', 'asset_pipeline/map*.py', 'asset_pipeline/dynamic_props.py',

@@ -71,7 +71,7 @@ uv pip install --python .local/venv-setup/bin/python -r tools/requirements-resea
 ```
 
 The Python tests run in the setup environment that `play.sh` creates, which has
-numpy and Pillow, after adding the research requirements (capstone and xex2).
+numpy, Pillow and xex2, after adding the research requirements (capstone).
 CI runs the same tests on macOS.
 
 ## Credits

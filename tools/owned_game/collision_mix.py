@@ -7,19 +7,17 @@ image (volume 82FBB430, log 82FBBD98, curve 82FBC598) and three authored
 aud_general floats. Every input is checked against the hash of the
 verified base disc; nothing is generated or approximated.
 
-Decoding default.xex needs the `xex2` package
-(https://github.com/landaire/acceleration, MIT OR Apache-2.0).
+Decoding default.xex needs the `xex2` package (see `xex.py`).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 import struct
 
-XEX_SHA256 = '1db39496585c521d17a2137804f42cf73ebed2b32cac166ec42dbf772f4dcf7f'
+from .xex import XEX_SHA256, load, sha256, table
+
 PROGRAM = ('MixMapSK8.mxb', '105f46bbc4ae25cf51bafc8524e00b0aef608a3aa91424e3d39bbc57fff305c2')
-IMAGE_BASE = 0x82000000
 # name: (mapped address, size, SHA-256)
 TABLES = {
     'pitch_semitones': (0x82FBCD9C, 48,
@@ -42,34 +40,9 @@ SETTINGS = {
 }
 
 
-def _sha(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def executable_tables(xex: bytes, extract=None) -> dict[str, bytes]:
-    """Slice the five tables from the mapped base-disc image.
-
-    `extract` maps raw XEX bytes to the mapped image; by default the
-    xex2 package performs the decryption and decompression.
-    """
-    if _sha(xex) != XEX_SHA256:
-        raise ValueError('default.xex is not the verified base-disc executable')
-    if extract is None:
-        try:
-            import xex2
-        except ImportError as error:
-            raise RuntimeError('Decoding default.xex needs the xex2 package '
-                               '(pip install xex2)') from error
-        extract = lambda raw: bytes(xex2.Xex2.parse(raw).extract_basefile())
-    image = extract(xex)
-    tables = {}
-    for name, (address, size, digest) in TABLES.items():
-        offset = address - IMAGE_BASE
-        blob = image[offset:offset + size]
-        if len(blob) != size or _sha(blob) != digest:
-            raise ValueError(f'{name} table does not match the verified executable')
-        tables[name] = blob
-    return tables
+def executable_tables(image: bytes) -> dict[str, bytes]:
+    """Slice the five tables from the verified mapped image (`xex.load`)."""
+    return {name: table(image, name, *row) for name, row in TABLES.items()}
 
 
 def settings(rows) -> dict[str, float]:
@@ -91,12 +64,12 @@ def settings(rows) -> dict[str, float]:
     return result
 
 
-def inputs(game: Path, rows, extract=None) -> tuple[bytes, dict[str, bytes], dict[str, float]]:
+def inputs(game: Path, rows) -> tuple[bytes, dict[str, bytes], dict[str, float]]:
     """Read and verify the owned program, executable tables and settings."""
     program = (game / 'data/audio' / PROGRAM[0]).read_bytes()
-    if _sha(program) != PROGRAM[1]:
+    if sha256(program) != PROGRAM[1]:
         raise ValueError(f'{PROGRAM[0]} is not the verified base-disc program')
-    tables = executable_tables((game / 'default.xex').read_bytes(), extract)
+    tables = executable_tables(load(game))
     return program, tables, settings(rows)
 
 
@@ -108,12 +81,12 @@ def write(output: Path, program: bytes, tables: dict[str, bytes], values: dict[s
     output.mkdir(parents=True)
     (output / PROGRAM[0]).write_bytes(program)
     files = {'program': PROGRAM[0]}
-    hashes = {PROGRAM[0]: _sha(program)}
+    hashes = {PROGRAM[0]: sha256(program)}
     for name, blob in tables.items():
         file = f'{name}.bin'
         (output / file).write_bytes(blob)
         files[name] = file
-        hashes[file] = _sha(blob)
+        hashes[file] = sha256(blob)
     manifest = {
         'version': 1,
         'files': files,

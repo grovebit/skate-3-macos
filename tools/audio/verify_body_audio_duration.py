@@ -12,7 +12,7 @@ import subprocess
 import struct
 import tempfile
 
-from tools.native_replay import xex_image
+from tools.owned_game import xex
 from tools.native_replay.ppc_interp import Machine
 
 
@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
     if args.rustc is None:
         parser.error("rustc was not found; supply --rustc")
-    image = xex_image.load(args.game)
+    image = xex.load(args.game)
 
     source = Path(__file__).resolve().parents[2] / "crates/skate-core/src/audio/hom/duration.rs"
     rng = random.Random(0x82D82F30)

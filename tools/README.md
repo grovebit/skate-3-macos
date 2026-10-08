@@ -4,7 +4,7 @@ Python tools that convert your copy of Skate 3 for the engine, plus audio
 research and performance analysis. `play.sh` creates their environment in
 `.local/venv-setup` (Python 3.13 with [`requirements-setup.txt`](requirements-setup.txt)).
 Research tools and the Python tests also need
-[`requirements-research.txt`](requirements-research.txt) (capstone and xex2).
+[`requirements-research.txt`](requirements-research.txt) (capstone).
 It is a separate file because `requirements-setup.txt` is part of the
 conversion fingerprints: changing it makes every player convert the game again.
 
@@ -32,11 +32,12 @@ are part of those fingerprints:
 Other folders:
 
 - [`owned_game/`](owned_game/): readers for the game's own formats (BIG
-  archives, RefPack, audio banks, MixMap programs and more), shared by the
+  archives, RefPack, audio banks, MixMap programs, the verified
+  `default.xex` image and more), shared by the
   pipeline and the audio tools. Its Python files are part of the conversion
   fingerprints too, so research-only code belongs elsewhere.
-- [`native_replay/`](native_replay/): `xex_image.py` decodes your
-  `default.xex`, and `ppc_interp.py` runs its PowerPC code for the native
+- [`native_replay/`](native_replay/): `ppc_interp.py` runs the PowerPC code
+  of your `default.xex` (decoded by `owned_game/xex.py`) for the native
   verifiers.
 - [`mixamo_to_skate/`](mixamo_to_skate/): converts Mixamo characters for the
   in-game Custom models menu. `preview_mixamo_animation.py` reviews a raw
