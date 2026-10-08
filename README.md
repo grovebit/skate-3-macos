@@ -64,12 +64,14 @@ environments, audio library) are created locally and never committed.
 ```sh
 cargo build               # the development build play.sh starts
 cargo test --workspace    # Rust tests, including shader validation
+uv pip install --python .local/venv-setup/bin/python -r tools/requirements-research.txt
 .local/venv-setup/bin/python -m unittest $(git ls-files 'tools/test_*.py' \
     'tools/asset_pipeline/test_*.py' 'tools/audio/test_*.py' | sed 's/\.py$//; s#/#.#g')
 ```
 
 The Python tests run in the setup environment that `play.sh` creates, which has
-numpy and Pillow. CI runs the same tests on macOS.
+numpy and Pillow, after adding the research requirements (capstone and xex2).
+CI runs the same tests on macOS.
 
 ## Credits
 

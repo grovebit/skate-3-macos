@@ -398,10 +398,10 @@ including unsigned/wrapping and float precision boundaries. The verifier
 checks mapped-image SHA-256
 `ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42`
 before replay. It stops at block continuations and hooks only terminal branch
-exits, with no computation hooks. It requires the private mapped image and local interpreter:
+exits, with no computation hooks. It decodes the image from your own game folder:
 
 ```sh
-python tools/audio/verify_body_audio_duration.py --analysis-dir /path/to/audio-investigation
+python -m tools.audio.verify_body_audio_duration --game "/path/to/Skate 3"
 ```
 
 This verification covers the isolated counter, conversion and section
@@ -558,7 +558,7 @@ No title-update address or constant address delta was used. Provenance:
 
 - `default.xex` SHA-256:
   `1db39496585c521d17a2137804f42cf73ebed2b32cac166ec42dbf772f4dcf7f`.
-- Mapped `default.pe` SHA-256, checked before replay:
+- Mapped image SHA-256, checked before replay:
   `ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42`.
   Virtual addresses below equal `82000000 + file offset`.
 
@@ -691,8 +691,8 @@ The subsequent retained/override paths at `8277CCA8` and transform helper
 miss these conditions and would still use the wrong packet pair.
 
 **Validation and effects.** `tools/audio/verify_audio_manager_cadence.py` takes
-`--analysis-dir`, rejects a mismatched mapped-image hash before importing the
-interpreter, embeds no proprietary bytes and uses explicit failure checks
+`--game`, rejects a mismatched executable or mapped-image hash before replay,
+embeds no proprietary bytes and uses explicit failure checks
 under Python `-O`. It compares **2,081 sequential native/production-Rust
 clock cases**, including 60 Hz, variable deltas, threshold-adjacent values,
 forced and disabled calls. Additional **native-only** research checks cover
@@ -733,7 +733,7 @@ of the suppression inputs, not complete channel-5 or gameplay parity.
 All addresses in this section are **base-disc** addresses. Executable
 `default.xex` SHA-256 is
 `1db39496585c521d17a2137804f42cf73ebed2b32cac166ec42dbf772f4dcf7f`;
-the inspected mapped `default.pe` SHA-256 is
+the inspected mapped image SHA-256 is
 `ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42`.
 The following mappings use code shape and field ownership independently;
 no title-update address delta is used.
@@ -836,7 +836,7 @@ its behavior is retained. Matching the final driver field tests does not
 close this producer discrepancy or validate the rest of the floating-point
 recovery predicate.
 
-`tools/audio/verify_body_audio_suppression.py --analysis-dir ...` checks the
+`tools/audio/verify_body_audio_suppression.py --game ...` checks the
 mapped-image hash, replays the skeleton byte load/store and processed-state
 dispatch/wipeout writer, and compares the resulting State byte and native
 worker primary gate with production Rust. Its 2,268 fixtures cover 21
@@ -967,9 +967,9 @@ but an abrupt rate change can change a waveform's slope. No gameplay physics,
 input or scoring behavior changes; altered audio duration changes collision
 voice/group completion and can affect later audio group reuse.
 
-**Verification.** `tools/audio/verify_collision_pitch.py --analysis-dir ...` checks
-both hashes before importing the owned replay helpers and fails with explicit
-checks under `python -O`. It uses the native modulation constructor, native
+**Verification.** `tools/audio/verify_collision_pitch.py --game ...` checks the
+executable, mapped-image, program and table hashes before replay and fails with
+explicit checks under `python -O`. It uses the native modulation constructor, native
 curve and scalar loops, output accumulation and packed writer, and the native
 voice consumer against production Rust over 160 persistent phases: 960 scalar
 levels, 1,600 modulation states/reset flags, 3,200 pitch slot words, 6,400 voice
@@ -1010,7 +1010,7 @@ This is **research and inspection tooling only**. Collision playback still uses
 its existing premixed variants; no Rust runtime or gameplay behavior changed.
 All addresses below are from base-disc `default.xex` SHA-256
 `1db39496585c521d17a2137804f42cf73ebed2b32cac166ec42dbf772f4dcf7f`, mapped
-`default.pe` SHA-256
+image SHA-256
 `ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42`.
 No title-update address mapping is used. Existing pan, scheduler and group-clock
 research above is reused; live pitch-controller application is outside this track.
@@ -1276,7 +1276,7 @@ and the gain-control-zero special case remain outside their coverage.
 `tools/audio/verify_aems_start.py` checks the Gai0 renderer against the existing
 production Rust ramp. Cache prefetch is ignored and cache-line clearing is
 emulated; all executed arithmetic is native instruction replay. Both tools
-require `--analysis-dir`, check the full mapped-image SHA-256 before replay,
+take `--game`, check the full mapped-image SHA-256 before replay,
 embed no executable bytes, and fail through explicit checks under `python -O`.
 Python unit tests cover field offsets, shared group references, legacy output
 compatibility, duplicate-audit input, malformed references and selector

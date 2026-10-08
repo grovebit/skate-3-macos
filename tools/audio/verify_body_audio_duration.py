@@ -1,33 +1,30 @@
 """Compare the duration adapter with owned base-disc instruction blocks.
 
-Requires the local ppc_interp.py, inspect_pe.py and mapped default.pe from
-audio research; no executable bytes are copied into the repository.
+Replays them from your own default.xex; no executable bytes are copied into
+the repository.
 """
 import argparse
 import json
-import hashlib
 from pathlib import Path
 import random
 import shutil
 import subprocess
 import struct
-import sys
 import tempfile
+
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--analysis-dir", type=Path, required=True)
+    parser.add_argument("--game", type=Path, required=True,
+                        help="your Skate 3 folder, with default.xex")
     parser.add_argument("--rustc", default=shutil.which("rustc"))
     args = parser.parse_args()
     if args.rustc is None:
         parser.error("rustc was not found; supply --rustc")
-    image = args.analysis_dir / "default.pe"
-    expected_hash = "ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42"
-    if hashlib.sha256(image.read_bytes()).hexdigest() != expected_hash:
-        parser.error("default.pe does not match the verified base-disc mapped image")
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from ppc_interp import Machine
+    image = xex_image.load(args.game)
 
     source = Path(__file__).resolve().parents[2] / "crates/skate-core/src/audio/hom/duration.rs"
     rng = random.Random(0x82D82F30)
@@ -44,7 +41,7 @@ def main():
         scoring = floats[(i // 9) % len(floats)] if i < 200 else rng.getrandbits(32)
         # Finite arbitrary strength bits verify copying, including signed zero.
         strength = rng.getrandbits(32) & 0xFEFFFFFF
-        m = Machine()
+        m = Machine(image)
         worker, table, skeleton, score, packet, collision = [
             0x100000, 0x102000, 0x103000, 0x104000, 0x105000, 0x106000]
         m.writable = [(worker, worker + 0x10000), (0x207000, 0x209000)]

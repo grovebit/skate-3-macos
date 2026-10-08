@@ -1,28 +1,26 @@
 """Replay the owned base-disc Scoring1 template copy, including duration.
 
-Requires private mapped default.pe and ppc_interp.py; stores no executable bytes.
+Replays it from your own default.xex; stores no executable bytes.
 This verifies packet copying, not worker lifecycle or global template writers.
 """
 import argparse
-import hashlib
 from pathlib import Path
 import random
-import sys
+
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--analysis-dir', type=Path, required=True)
+    parser.add_argument('--game', type=Path, required=True,
+                        help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    expected = 'ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42'
-    if hashlib.sha256((args.analysis_dir / 'default.pe').read_bytes()).hexdigest() != expected:
-        parser.error('default.pe does not match the verified base-disc mapped image')
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from ppc_interp import Machine
+    image = xex_image.load(args.game)
 
     rng = random.Random(0x82DBA980)
     for index in range(100):
-        m = Machine()
+        m = Machine(image)
         m.writable = [(0x100000, 0x130000), (0x207000, 0x209000)]
         m.r[1], m.r[30], m.r[31] = 0x208000, 0x100000, 0x101000
         m.w32(0x10003C, 0x110000)

@@ -233,10 +233,11 @@ Four Rust tests cover alternating unequal deltas, disabled forced calls,
 forced/long-update resets, threshold-adjacent values, and zero-delta phase
 advancement. A local instruction interpreter executed the owned scheduling
 instructions against the production Rust module for 2,000 sequential cases;
-selected phases and emitted float bits matched throughout. The local verifier
-is `.local/audio-investigation/verify_audio_clock_native.py`; proprietary
-instruction inputs remain outside version control. This validates the scalar
-scheduling kernel, not original-hardware execution or end-to-end audio.
+selected phases and emitted float bits matched throughout.
+`tools/audio/verify_audio_manager_cadence.py` replays the same block against
+the same module (2,081 cases) from your own `default.xex`; no instructions are
+stored in the repository. This validates the scalar scheduling kernel, not
+original-hardware execution or end-to-end audio.
 
 The kernel now schedules the runtime body loop, fed provisionally with the
 fixed simulation-tick delta (see

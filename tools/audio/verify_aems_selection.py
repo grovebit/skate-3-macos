@@ -1,17 +1,15 @@
 """Replay AEMS selection and CRT RNG against a research reference, not a Rust port.
 
-Needs the owned mapped image and local ppc_interp.py. The TLS accessor is
+Replays the owned routines from your own default.xex. The TLS accessor is
 relocated; pow(2, n), n=1..16, is an explicit exact dependency hook. No RNG,
 selection branches, state writes or floating selection arithmetic are hooked.
 """
 import argparse
-import hashlib
 from pathlib import Path
-from fractions import Fraction
 import struct
-import sys
 
-IMAGE_SHA256 = 'ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42'
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def rng_step(state):
@@ -49,61 +47,16 @@ def select(count, mode, state, random_word):
     return 0, state
 
 
-def replay_class(Machine):
-    class Replay(Machine):
-        # Instructions absent from the shared research interpreter. These are
-        # decoded operations, not hooks at the computation under investigation.
-        def step(self, pc):
-            mn, ops, _ = self.decode(pc)
-            if mn == 'twi':
-                to = int(ops[0], 0)
-                a, b = self.s32(self.gpr(ops[1])), int(ops[2], 0)
-                u, v = a & 0xffffffff, b & 0xffffffff
-                if ((to & 16 and a < b) or (to & 8 and a > b)
-                        or (to & 4 and a == b) or (to & 2 and u < v)
-                        or (to & 1 and u > v)):
-                    raise RuntimeError(f'Native trap at {pc:08x}')
-            elif mn == 'bdz':
-                self.ctr = (self.ctr - 1) & ((1 << 64) - 1)
-                return int(ops[0], 0) if self.ctr == 0 else pc + 4
-            elif mn in ('fmsubs', 'fnmsubs'):
-                from ppc_interp import exact_f32
-                a, b, c = (Fraction(self.fpr(o)) for o in ops[1:])
-                value = a * b - c
-                self.set_fpr(ops[0], exact_f32(-value if mn == 'fnmsubs' else value))
-            elif mn == 'divwu':
-                self.set_gpr(ops[0], (self.gpr(ops[1]) & 0xffffffff)
-                             // (self.gpr(ops[2]) & 0xffffffff))
-            elif mn == 'slw':
-                self.set_gpr(ops[0], (self.gpr(ops[1]) << (self.gpr(ops[2]) & 63)) & 0xffffffff)
-            elif mn == 'addic':
-                value = self.gpr(ops[1]) + (int(ops[2], 0) & ((1 << 64) - 1))
-                self.ca = int(value >= 1 << 64)
-                self.set_gpr(ops[0], value)
-            elif mn == 'rotlwi':
-                value, shift = self.gpr(ops[1]) & 0xffffffff, int(ops[2], 0)
-                self.set_gpr(ops[0], ((value << shift) | (value >> (32 - shift))) & 0xffffffff)
-            elif mn == 'fctidz':
-                self.f[int(ops[0][1:])] = int(self.fpr(ops[1])) & ((1 << 64) - 1)
-            else:
-                return super().step(pc)
-            return pc + 4
-    return Replay
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--analysis-dir', type=Path, required=True)
+    parser.add_argument('--game', type=Path, required=True,
+                        help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    if hashlib.sha256((args.analysis_dir / 'default.pe').read_bytes()).hexdigest() != IMAGE_SHA256:
-        parser.error('default.pe does not match the verified base-disc mapped image')
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from ppc_interp import Machine
-    Replay = replay_class(Machine)
+    image = xex_image.load(args.game)
     state_ptr, tls = 0x100000, 0x101000
 
     def machine():
-        m = Replay()
+        m = Machine(image)
         m.writable = [(0x100000, 0x110000), (0x200000, 0x210000)]
         m.r[1] = 0x208000
         m.hooks[0x82f2d020] = lambda m: m.r.__setitem__(3, tls)
