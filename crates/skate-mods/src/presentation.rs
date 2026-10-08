@@ -120,6 +120,7 @@ pub struct CanvasOptions {
     pub size: [f32; 2],
     pub scale: f32,
     pub visible: bool,
+    #[serde(deserialize_with = "crate::lua_list::list")]
     pub items: Vec<CanvasItem>,
 }
 impl Default for CanvasOptions {

@@ -70,13 +70,13 @@ pub struct MeshBufferOptions {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MeshBufferWrite {
-    #[serde(default)] pub positions: Vec<[f32; 3]>,
-    #[serde(default)] pub normals: Option<Vec<[f32; 3]>>,
+    #[serde(default, deserialize_with = "crate::lua_list::list")] pub positions: Vec<[f32; 3]>,
+    #[serde(default, deserialize_with = "crate::lua_list::opt_list")] pub normals: Option<Vec<[f32; 3]>>,
     /// Flat RGBA per vertex: `[r,g,b,a, r,g,b,a, ...]`.
-    #[serde(default)] pub colors: Option<Vec<f32>>,
+    #[serde(default, deserialize_with = "crate::lua_list::opt_list")] pub colors: Option<Vec<f32>>,
     /// Flat UV pairs: `[u,v, u,v, ...]`.
-    #[serde(default)] pub uvs: Option<Vec<f32>>,
-    #[serde(default)] pub indices: Vec<u32>,
+    #[serde(default, deserialize_with = "crate::lua_list::opt_list")] pub uvs: Option<Vec<f32>>,
+    #[serde(default, deserialize_with = "crate::lua_list::list")] pub indices: Vec<u32>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

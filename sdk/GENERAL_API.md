@@ -73,6 +73,8 @@ schema is `Command` in `crates/skate-mods/src/vm.rs`. Results contain `token`,
 the Lua accessor ignores an older token. Maximum 64 result keys per mod.
 Receipts remain readable until replacement or mod/world cleanup. Nested requests
 are rejected. Invalid Lua/schema arguments still fail callback validation.
+List fields read `{}` as an empty list. A table counts as a list only when its
+keys run 1..n without gaps; any other table is refused.
 
 `ok` means the host accepted and applied that command. It does not mean a remote
 peer acknowledged a network message or a multi-tick operation finished. Host

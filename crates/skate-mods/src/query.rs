@@ -21,7 +21,7 @@ pub struct RaycastOptions {
     pub max_distance: f32,
     #[serde(default)]
     pub filter: RaycastFilter,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::lua_list::list")]
     pub exclude: Vec<String>,
 }
 

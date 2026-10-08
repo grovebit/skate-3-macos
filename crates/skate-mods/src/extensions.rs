@@ -4,14 +4,14 @@ use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct MenuOptions { pub title: String, #[serde(default)] pub section: Option<String>, pub items: Vec<MenuItem> }
+pub struct MenuOptions { pub title: String, #[serde(default)] pub section: Option<String>, #[serde(deserialize_with = "crate::lua_list::list")] pub items: Vec<MenuItem> }
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MenuItem {
     pub id: String, pub label: String,
     #[serde(default)] pub description: String,
     #[serde(default="enabled")] pub enabled: bool,
-    #[serde(default)] pub children: Vec<MenuItem>,
+    #[serde(default, deserialize_with = "crate::lua_list::list")] pub children: Vec<MenuItem>,
 }
 fn enabled() -> bool { true }
 impl MenuOptions {
