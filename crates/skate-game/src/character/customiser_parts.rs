@@ -594,6 +594,11 @@ pub(crate) fn update(
         return;
     };
     let preview = state.preview(&parts);
+    // An applied outfit resolved when it was applied, and the library is fixed
+    // after startup, so with the customiser closed there is nothing to redo.
+    if parts.applied == preview && !state.open {
+        return;
+    }
     let Some(selections) = preview["selections"].as_object() else {
         return;
     };
@@ -614,9 +619,6 @@ pub(crate) fn update(
             state.status = message.into();
             state.redraw = true;
         }
-        return;
-    }
-    if parts.applied == preview && !state.open {
         return;
     }
     // Resolve the visible choices ahead of selection, including skin, head,
