@@ -519,16 +519,14 @@ fn snapshot_ro(world: &World, mods: &mut Mods, camera: Option<[f32; 3]>) -> serd
                 .collect()
         })
         .unwrap_or_else(|| vec![local_id.clone()]);
-    json!({
-        "player": player,
-        "skaters": skaters,
-        "command_results": mods.command_results.iter().fold(serde_json::Map::<String,Value>::new(), |mut out,((owner,key),value)| {
-            out.entry(owner.clone()).or_insert_with(||json!({}))[key]=value.clone();out
-        }),
-        "volumes": mods.manager.packages.keys().map(|owner| {
-            (owner.clone(), volumes::snapshot(mods, owner, &local_id, &observation::local(world), &mods.skater_remote))
-        }).collect::<serde_json::Map<String, Value>>(),
-        "session": session::lua(mods, net.get("active").and_then(Value::as_bool).unwrap_or(false), &local_id, host, &host_id, &players),
+    let command_results = mods.command_results.iter().fold(serde_json::Map::<String,Value>::new(), |mut out,((owner,key),value)| {
+        out.entry(owner.clone()).or_insert_with(||json!({}))[key]=value.clone();out
+    });
+    let volumes = mods.manager.packages.keys().map(|owner| {
+        (owner.clone(), volumes::snapshot(mods, owner, &local_id, &observation::local(world), &mods.skater_remote))
+    }).collect::<serde_json::Map<String, Value>>();
+    let session = session::lua(mods, net.get("active").and_then(Value::as_bool).unwrap_or(false), &local_id, host, &host_id, &players);
+    let mut snapshot = json!({
         "attach": mods.attach.as_ref().map(|a| json!({"body": a.body, "owner": a.owner})),
         "detach_error": mods.detach_error,
         "detach_pending": mods.detach_pending.is_some(),
@@ -546,8 +544,19 @@ fn snapshot_ro(world: &World, mods: &mut Mods, camera: Option<[f32; 3]>) -> serd
         "replay": world.resource::<crate::replay::Replay>().active,
         "camera": camera.map(|position| json!({"position": position})),
         "physics": {"bodies": {}, "contacts": []},
-        "network": net,
-    })
+    });
+    // Moved in: `json!` would serialize each built value into a deep copy.
+    for (key, value) in [
+        ("player", player),
+        ("skaters", skaters),
+        ("command_results", Value::Object(command_results)),
+        ("volumes", Value::Object(volumes)),
+        ("session", session),
+        ("network", net),
+    ] {
+        snapshot[key] = value;
+    }
+    snapshot
 }
 
 fn fixed(world: &mut World) {
