@@ -268,3 +268,73 @@ fn limiter_keeps_quaternion_w_lane_fused_residuals() {
     let expected = second_w.mul_add(2.0, from[3]);
     assert_eq!(got[3].to_bits(), expected.to_bits());
 }
+
+/// Upstream issue #10: a stray W lane in the ground frame position must not be
+/// amplified by the moving-support velocity derivative. Without the host W=0
+/// lane a 1e-3 seed reaches Inf after about 195 supported ticks, then NaN.
+#[test]
+fn stray_position_w_is_not_amplified_by_support_velocity() {
+    let mut s = state();
+    let mut i = input();
+    i.contact_flags_176 = 1;
+    s.frame_0[3] = [1.0, 0.0, 2.0, 0.0];
+    for tick in 0..600 {
+        i.contact_displacement_384 = if tick == 5 { [0.0, 0.0, 0.0, 1.0e-3] } else { ZERO };
+        update(&mut s, &i);
+        assert_eq!(s.support_velocity_256[3], 0.0, "tick {tick}");
+        assert_eq!(s.predicted_support_velocity_272[3], 0.0, "tick {tick}");
+        assert!(s.frame_0[3][3].abs() <= 1.0e-3, "tick {tick}: W {}", s.frame_0[3][3]);
+        assert!(s.frame_0[3].iter().all(|v| v.is_finite()), "tick {tick}");
+    }
+    assert_eq!(&s.frame_0[3][..3], &[1.0, 0.0, 2.0]);
+}
+
+/// The same loop seeded by animation-directed movement: the authored target
+/// frame's W lanes enter the step through target - position.
+#[test]
+fn animation_target_w_scratch_cannot_blow_up_the_ground_frame() {
+    let mut s = state();
+    let mut i = input();
+    i.contact_flags_176 = 1;
+    s.frame_0[3] = [1.0, 0.0, 2.0, 0.0];
+    for tick in 0..600 {
+        let directed = (5..15).contains(&tick);
+        i.animation_directed_304 = directed;
+        i.target_frame_present_352 = directed;
+        i.target_frame_368 = IDENTITY;
+        // Native permutation scratch: each row's X repeated into W.
+        i.target_frame_368[0][3] = 1.0;
+        i.target_frame_368[3] = [1.5, 0.0, 2.0, 1.5];
+        update(&mut s, &i);
+        assert!(s.frame_0[3].iter().all(|v| v.is_finite()), "tick {tick}: {:?}", s.frame_0[3]);
+        assert!(s.frame_0[3][3].abs() < 10.0, "tick {tick}: W {}", s.frame_0[3][3]);
+    }
+}
+
+/// The host W=0 lane changes no XYZ value: on a moving, turning support a
+/// seeded W leaves every XYZ lane bit-identical to the unseeded run.
+#[test]
+fn stray_position_w_leaves_moving_support_xyz_unchanged() {
+    let (mut clean, mut seeded) = (state(), state());
+    seeded.frame_0[3][3] = 1.0e-3;
+    let mut i = input();
+    i.contact_flags_176 = 1;
+    let xyz = |s: &GroundMotionState| {
+        [s.frame_0[3], s.velocity_480, s.support_velocity_256, s.predicted_support_velocity_272]
+            .map(|v| v[..3].iter().map(|x| x.to_bits()).collect::<Vec<_>>())
+    };
+    for tick in 0..300 {
+        let (sine, cosine) = (0.01 * tick as f32).sin_cos();
+        let shift = 0.02 * tick as f32;
+        i.contact_frame_32 = [
+            [cosine, 0.0, -sine, 0.0],
+            UP,
+            [sine, 0.0, cosine, 0.0],
+            [shift, 0.0, 0.5 * shift, 0.0],
+        ];
+        update(&mut clean, &i);
+        update(&mut seeded, &i);
+        assert_eq!(xyz(&clean), xyz(&seeded), "tick {tick}");
+        assert_eq!(seeded.frame_0[3][3], 1.0e-3, "tick {tick}");
+    }
+}
