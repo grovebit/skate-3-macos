@@ -376,23 +376,43 @@ fn customiser_equipment_reaches_ground_force_and_torque() {
     for hardness in [0.0_f32, 0.7, 1.0] {
         let mut physics = GamePhysics::load(root).unwrap();
         let mut skater = SkaterRuntime::load(root, &graphs, &physics, "normal").unwrap();
+        let mut controls = PlayerControls::default();
+        let mut camera = crate::camera::CameraRuntime::load(root).unwrap();
+        let input = crate::input::ControllerInput::default();
+        let mut tick = |physics: &mut GamePhysics, skater: &mut SkaterRuntime| {
+            frame::advance(
+                physics,
+                skater,
+                &mut controls,
+                &graphs,
+                &mut input.player_actions(),
+                false,
+                &mut camera,
+            )
+            .unwrap();
+        };
+        // The spawn drops the board onto the floor; by tick 60 it rests in Ground
+        // on four wheels (asserted below). Sample that settled board, not the
+        // drop, whose deck yaw (~0.3 rad/s) TU3 82C07000 subtracts from the
+        // straighten request. Every run settles with the same default profile,
+        // so only the hardness differs at the sample.
+        for _ in 0..60 {
+            tick(&mut physics, &mut skater);
+        }
         crate::character::customiser::apply_preferences(
             &serde_json::json!({"truck": hardness, "wheel": hardness}),
             &mut physics, &mut skater.animation,
         );
-        let mut controls = PlayerControls::default();
-        let mut camera = crate::camera::CameraRuntime::load(root).unwrap();
-        let input = crate::input::ControllerInput::default();
-        frame::advance(
-            &mut physics,
-            &mut skater,
-            &mut controls,
-            &graphs,
-            &mut input.player_actions(),
-            false,
-            &mut camera,
-        )
-        .unwrap();
+        // One more tick publishes the new profile through PlayerInput.
+        tick(&mut physics, &mut skater);
+        let spin = physics.board.bodies()[6].rates.angular_velocity;
+        assert_eq!(
+            skater.player_state.current(),
+            skate_core::player::state::PhysicalStateId::PhysicsGround,
+            "board did not settle in Ground"
+        );
+        assert_eq!(physics.riding.ground.wheel_contact_count, 4, "board did not settle on four wheels");
+        assert!(spin.y.abs() < 0.01, "settled deck still yaws: {spin:?}");
 
         // Replay identical observed sideways travel at the Ground input boundary.
         // Only the published profile input changes; run the actual Ground adapter.

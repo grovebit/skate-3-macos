@@ -88,7 +88,9 @@ impl CollisionBody {
 #[derive(Clone, Copy, Debug)]
 pub struct BoardStepSettings {
     pub simulation: RetailSimulationStep,
-    /// Loaded from Simulation+176 by 82DC3098. Not a fixed solver constant.
+    /// Simulation+176 (0xB0): the pass count TU3 82DC3098 hands the solver.
+    /// Base disc: thunk 0x82D98180 passes it to 0x82ABA360, and writer
+    /// 0x827412C8 sets it before every step (skate-game SIMULATION_ITERATIONS).
     pub iterations: u32,
     pub base_truck_transforms: [RetailAffineTransform; 2],
     pub truck_dynamics: RetailDriveDynamics,

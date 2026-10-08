@@ -18,6 +18,16 @@ use skate_core::{
 };
 use skate_data::collections::Collections;
 
+/// Solver passes of the skater world's Simulation (+0xB0). Base disc: before
+/// every step, writer 0x827412C8 stores 50 when the slot-0 owner's mode word is
+/// 3 and 25 otherwise. Slot 0 leaves mode 3 only while byte 0x83026AE9 is set,
+/// which only the original online session flow does (0x826C7464). Setup's
+/// hard-coded 25 (0x8273B1C4) is overwritten before the first solve, and
+/// physics/default.RWMaxIterations is never read. The multiplayer extension is
+/// not that online flow and also uses 50 (host choice). See
+/// docs/physics/solver-iterations.md.
+pub(crate) const SIMULATION_ITERATIONS: u32 = 50;
+
 pub(crate) struct PhysicsSettings {
     pub step: BoardStepSettings,
     pub masses: [RetailBodyMassProperties; 7],
@@ -88,7 +98,7 @@ impl PhysicsSettings {
         );
         let step = BoardStepSettings {
             simulation,
-            iterations: data.integer("physics", "default", "RWMaxIterations")?,
+            iterations: SIMULATION_ITERATIONS,
             base_truck_transforms: calculate_truck_transforms(RetailTruckTransformInputs {
                 deck_mid_length: geometry.deck_mid_length,
                 truck_z_position_front: geometry.truck_z_position_front,
@@ -105,8 +115,8 @@ impl PhysicsSettings {
             }),
             force_point_y_offset: f("physicsdeck", "DeckForceYOffset")?,
         };
-        if wheel_radius <= 0.0 || mass_factor <= 0.0 || step.iterations == 0 {
-            return Err("Invalid stock board radius, mass factor or solver iterations".into());
+        if wheel_radius <= 0.0 || mass_factor <= 0.0 {
+            return Err("Invalid stock board radius or mass factor".into());
         }
         Ok(Self {
             step,

@@ -556,6 +556,10 @@ impl GamePhysics {
 mod tests;
 
 #[cfg(test)]
+#[path = "tests/solver_iterations.rs"]
+mod solver_iteration_measurements;
+
+#[cfg(test)]
 #[path = "tests/air_playback.rs"]
 mod air_tests;
 

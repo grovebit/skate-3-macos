@@ -6,8 +6,9 @@
   what the port reproduces.
 - [Performance records](performance/README.md): frame-time, GPU and CPU
   measurements.
-- Physics notes: [quarter-pipe transition input](physics/quarter-pipe-transition-input.md)
-  and [grind trick state 202](physics/grind-trick-state-202.md).
+- Physics notes: [quarter-pipe transition input](physics/quarter-pipe-transition-input.md),
+  [grind trick state 202](physics/grind-trick-state-202.md) and
+  [solver iterations](physics/solver-iterations.md).
 
 The Lua mod SDK is documented in [`sdk/`](../sdk/README.md). Other Markdown files placed
 directly in `docs/` are ignored by Git and stay local.
