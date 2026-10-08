@@ -1,0 +1,88 @@
+{
+  "game_gpu_interval_window_seconds": 5.899199791,
+  "gpu_union_busy_percent": 49.379100457728505,
+  "gpu_busy_per_frame": {
+    "count": 753,
+    "mean_ms": 3.860823487383798,
+    "median_ms": 3.282499,
+    "p95_ms": 7.531665,
+    "max_ms": 9.955708
+  },
+  "gpu_first_to_last_per_frame": {
+    "count": 753,
+    "mean_ms": 4.110804869853918,
+    "median_ms": 3.551417,
+    "p95_ms": 8.027875,
+    "max_ms": 10.446916
+  },
+  "callback_cadence": {
+    "count": 753,
+    "mean_ms": 7.819882359893758,
+    "median_ms": 6.356292,
+    "p95_ms": 16.723958,
+    "max_ms": 61.345833
+  },
+  "cpu_to_gpu_latency_per_interval": {
+    "count": 28821,
+    "mean_ms": 2.1940870760903506,
+    "median_ms": 1.67875,
+    "p95_ms": 5.314292,
+    "max_ms": 10.19775
+  },
+  "channel_union_busy_ms": {
+    "Vertex": 1706.675787,
+    "Compute": 129.936081,
+    "Fragment": 2250.142773
+  },
+  "unmapped_intervals": 17,
+  "top_labels_summed_duration_ms": [
+    [
+      "main_opaque_pass_3d:main_opaque_pass_3d  ",
+      1605.317372
+    ],
+    [
+      "upscaling:upscaling  ",
+      410.793012
+    ],
+    [
+      "main_transparent_pass_3d:main_transparent_pass_3d  ",
+      400.493687
+    ],
+    [
+      "ui:ui  ",
+      294.946798
+    ],
+    [
+      "retail exposed tone:retail exposed tone  ",
+      273.963481
+    ],
+    [
+      "main_opaque_pass_2d:main_opaque_pass_2d (Clear)",
+      263.673428
+    ],
+    [
+      "shadow_directional_light_1_cascade_3:shadow_directional_light_1_cascade_3  ",
+      209.541149
+    ],
+    [
+      "shadow_directional_light_1_cascade_2:shadow_directional_light_1_cascade_2  ",
+      150.786791
+    ],
+    [
+      "shadow_directional_light_1_cascade_1:shadow_directional_light_1_cascade_1  ",
+      93.418809
+    ],
+    [
+      "shadow_directional_light_1_cascade_0:shadow_directional_light_1_cascade_0  ",
+      80.882806
+    ],
+    [
+      "no_camera_clear_pass:no_camera_clear_pass  ",
+      72.681314
+    ],
+    [
+      "shadow_directional_light_0_cascade_0:shadow_directional_light_0_cascade_0  ",
+      49.579155
+    ]
+  ]
+}

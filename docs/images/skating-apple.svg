@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="40 40 1000 960" width="1000" height="960">
+  <title>Apple logo riding a skateboard</title>
+  <defs>
+    <clipPath id="apple">
+      <path d="M500 260C440 225 360 205 290 215C170 235 95 340 95 480C95 640 170 820 270 900C320 940 370 955 420 935C460 920 480 905 500 905C520 905 545 920 585 935C635 955 690 940 735 900C790 850 840 770 870 690C790 665 745 600 745 530C745 460 785 410 845 385C805 300 730 230 650 215C590 205 545 225 500 260Z"/>
+      <path d="M505 225C500 150 560 70 645 55C650 135 590 215 505 225Z"/>
+    </clipPath>
+    <g id="sneaker">
+      <rect x="22" y="-18" width="34" height="30" rx="8" fill="#fff" stroke="#1d1d1f" stroke-width="7"/>
+      <path d="M26 -6H52" stroke="#e03a3e" stroke-width="7"/>
+      <path d="M6 46V18Q6 6 18 6H54Q64 6 69 15L76 26Q81 32 93 32H112Q134 34 134 46Z" fill="#fff" stroke="#1d1d1f" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M100 32H112Q134 34 134 46H100Z" fill="#e03a3e"/>
+      <path d="M62 17L72 13M68 26L79 22" stroke="#1d1d1f" stroke-width="6" stroke-linecap="round"/>
+      <rect x="0" y="44" width="140" height="14" rx="7" fill="#1d1d1f"/>
+    </g>
+  </defs>
+
+  <!-- speed lines -->
+  <g stroke="#b9c0c8" stroke-width="18" stroke-linecap="round">
+    <path d="M150 470H290"/>
+    <path d="M90 580H300"/>
+    <path d="M170 690H300"/>
+    <path d="M120 800H260"/>
+  </g>
+
+  <!-- shadow -->
+  <ellipse cx="650" cy="955" rx="330" ry="20" fill="#000" opacity="0.12"/>
+
+  <!-- light sticker outline: invisible on light pages, keeps the dark parts visible on dark ones -->
+  <g fill="#fff" stroke="#fff" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M596 600Q676 690 597 770M694 600Q812 680 767 770" fill="none" stroke-width="46"/>
+    <path d="M300 812C318 836 345 842 380 842H920C955 842 982 836 1000 812C996 842 972 864 932 864H368C328 864 304 842 300 812Z" stroke-width="16"/>
+    <circle cx="480" cy="900" r="34" stroke-width="16"/>
+    <circle cx="830" cy="900" r="34" stroke-width="16"/>
+    <g transform="translate(330 40) scale(0.62)" stroke-width="30">
+      <path d="M500 260C440 225 360 205 290 215C170 235 95 340 95 480C95 640 170 820 270 900C320 940 370 955 420 935C460 920 480 905 500 905C520 905 545 920 585 935C635 955 690 940 735 900C790 850 840 770 870 690C790 665 745 600 745 530C745 460 785 410 845 385C805 300 730 230 650 215C590 205 545 225 500 260Z"/>
+      <path d="M505 225C500 150 560 70 645 55C650 135 590 215 505 225Z"/>
+    </g>
+  </g>
+
+  <!-- legs, drawn first so the apple covers the hips -->
+  <g fill="none" stroke="#1d1d1f" stroke-width="30" stroke-linecap="round">
+    <path d="M596 600Q676 690 597 770"/>
+    <path d="M694 600Q812 680 767 770"/>
+  </g>
+
+  <!-- sneakers, toes towards the nose -->
+  <use xlink:href="#sneaker" transform="translate(560 784)"/>
+  <use xlink:href="#sneaker" transform="translate(730 784)"/>
+
+  <!-- skateboard -->
+  <g>
+    <rect x="452" y="858" width="56" height="20" rx="6" fill="#8e959c"/>
+    <rect x="802" y="858" width="56" height="20" rx="6" fill="#8e959c"/>
+    <path d="M300 812C318 836 345 842 380 842H920C955 842 982 836 1000 812C996 842 972 864 932 864H368C328 864 304 842 300 812Z" fill="#e3a65c"/>
+    <path d="M300 812C318 836 345 842 380 842H920C955 842 982 836 1000 812C994 830 972 846 932 848H368C328 846 306 830 300 812Z" fill="#1d1d1f"/>
+    <circle cx="480" cy="900" r="34" fill="#f26b1d"/>
+    <circle cx="480" cy="900" r="13" fill="#5a5f66"/>
+    <circle cx="830" cy="900" r="34" fill="#f26b1d"/>
+    <circle cx="830" cy="900" r="13" fill="#5a5f66"/>
+  </g>
+
+  <!-- the apple, striped like the six-colour logo -->
+  <g transform="translate(330 40) scale(0.62)" clip-path="url(#apple)">
+    <rect x="0" y="0" width="1000" height="330" fill="#61bb46"/>
+    <rect x="0" y="330" width="1000" height="125" fill="#fdb827"/>
+    <rect x="0" y="455" width="1000" height="125" fill="#f5821f"/>
+    <rect x="0" y="580" width="1000" height="125" fill="#e03a3e"/>
+    <rect x="0" y="705" width="1000" height="125" fill="#963d97"/>
+    <rect x="0" y="830" width="1000" height="200" fill="#009ddc"/>
+  </g>
+</svg>

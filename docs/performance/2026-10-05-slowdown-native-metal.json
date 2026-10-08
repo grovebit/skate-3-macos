@@ -1,0 +1,1269 @@
+{
+  "pid": 76753,
+  "process": "skate3rust-optimized",
+  "start_utc": "2026-10-05T18:01:51.707Z",
+  "end_utc": "2026-10-05T18:04:11.960Z",
+  "cpu_profiler_end_utc": "2026-10-05T18:04:02.065Z",
+  "intervals": [
+    {
+      "start_utc": "2026-10-05T18:01:51.707Z",
+      "end_utc": "2026-10-05T18:01:52.897Z",
+      "fps": 112.65219674963534,
+      "frame_count": 134,
+      "gpu_active_ms_mean": 3.460244910447762,
+      "cpu_end_to_end_latency_ms_mean": 9.728141541465936,
+      "frame_on_glass_interval_ms_mean": 6.936645363299946
+    },
+    {
+      "start_utc": "2026-10-05T18:01:52.897Z",
+      "end_utc": "2026-10-05T18:01:53.964Z",
+      "fps": 159.3722665685591,
+      "frame_count": 170,
+      "gpu_active_ms_mean": 3.5638504588235285,
+      "cpu_end_to_end_latency_ms_mean": 9.069765315678737,
+      "frame_on_glass_interval_ms_mean": 6.295476715689908
+    },
+    {
+      "start_utc": "2026-10-05T18:01:53.964Z",
+      "end_utc": "2026-10-05T18:01:54.964Z",
+      "fps": 163.00065094492516,
+      "frame_count": 163,
+      "gpu_active_ms_mean": 3.4845855582822107,
+      "cpu_end_to_end_latency_ms_mean": 8.772748850637395,
+      "frame_on_glass_interval_ms_mean": 6.135469325211048
+    },
+    {
+      "start_utc": "2026-10-05T18:01:54.964Z",
+      "end_utc": "2026-10-05T18:01:55.964Z",
+      "fps": 162.99580298740324,
+      "frame_count": 163,
+      "gpu_active_ms_mean": 3.454725411042943,
+      "cpu_end_to_end_latency_ms_mean": 8.599552000941355,
+      "frame_on_glass_interval_ms_mean": 6.072212423253633
+    },
+    {
+      "start_utc": "2026-10-05T18:01:55.964Z",
+      "end_utc": "2026-10-05T18:01:56.964Z",
+      "fps": 163.00490650402216,
+      "frame_count": 163,
+      "gpu_active_ms_mean": 3.551750036809816,
+      "cpu_end_to_end_latency_ms_mean": 8.944790273621976,
+      "frame_on_glass_interval_ms_mean": 6.183674846642988
+    },
+    {
+      "start_utc": "2026-10-05T18:01:56.964Z",
+      "end_utc": "2026-10-05T18:01:57.964Z",
+      "fps": 153.99968791071242,
+      "frame_count": 154,
+      "gpu_active_ms_mean": 3.5651606103896114,
+      "cpu_end_to_end_latency_ms_mean": 9.157008494291297,
+      "frame_on_glass_interval_ms_mean": 6.493615259812516
+    },
+    {
+      "start_utc": "2026-10-05T18:01:57.964Z",
+      "end_utc": "2026-10-05T18:01:58.964Z",
+      "fps": 154.0002019408013,
+      "frame_count": 154,
+      "gpu_active_ms_mean": 3.5776763636363644,
+      "cpu_end_to_end_latency_ms_mean": 9.13121223422493,
+      "frame_on_glass_interval_ms_mean": 6.46548917745361
+    },
+    {
+      "start_utc": "2026-10-05T18:01:58.964Z",
+      "end_utc": "2026-10-05T18:01:59.964Z",
+      "fps": 170.00070929823224,
+      "frame_count": 170,
+      "gpu_active_ms_mean": 3.520817070588236,
+      "cpu_end_to_end_latency_ms_mean": 8.56546725211528,
+      "frame_on_glass_interval_ms_mean": 5.882811519618639
+    },
+    {
+      "start_utc": "2026-10-05T18:01:59.964Z",
+      "end_utc": "2026-10-05T18:02:00.964Z",
+      "fps": 156.99781027510141,
+      "frame_count": 157,
+      "gpu_active_ms_mean": 3.4600675095541416,
+      "cpu_end_to_end_latency_ms_mean": 9.025083942476742,
+      "frame_on_glass_interval_ms_mean": 6.361956475487951
+    },
+    {
+      "start_utc": "2026-10-05T18:02:00.964Z",
+      "end_utc": "2026-10-05T18:02:01.964Z",
+      "fps": 154.99959349738873,
+      "frame_count": 155,
+      "gpu_active_ms_mean": 3.548544141935484,
+      "cpu_end_to_end_latency_ms_mean": 9.09944498956564,
+      "frame_on_glass_interval_ms_mean": 6.465801344095399
+    },
+    {
+      "start_utc": "2026-10-05T18:02:01.964Z",
+      "end_utc": "2026-10-05T18:02:02.964Z",
+      "fps": 165.00124902478612,
+      "frame_count": 165,
+      "gpu_active_ms_mean": 3.4582782363636357,
+      "cpu_end_to_end_latency_ms_mean": 8.809241323880006,
+      "frame_on_glass_interval_ms_mean": 6.048437373740881
+    },
+    {
+      "start_utc": "2026-10-05T18:02:02.964Z",
+      "end_utc": "2026-10-05T18:02:03.964Z",
+      "fps": 157.99807884644957,
+      "frame_count": 158,
+      "gpu_active_ms_mean": 3.6133855316455694,
+      "cpu_end_to_end_latency_ms_mean": 9.271430498750917,
+      "frame_on_glass_interval_ms_mean": 6.368980749069618
+    },
+    {
+      "start_utc": "2026-10-05T18:02:03.964Z",
+      "end_utc": "2026-10-05T18:02:04.964Z",
+      "fps": 165.00213417191,
+      "frame_count": 165,
+      "gpu_active_ms_mean": 3.555557454545455,
+      "cpu_end_to_end_latency_ms_mean": 9.076911747406209,
+      "frame_on_glass_interval_ms_mean": 6.025819696845826
+    },
+    {
+      "start_utc": "2026-10-05T18:02:04.964Z",
+      "end_utc": "2026-10-05T18:02:05.964Z",
+      "fps": 171.99854422847744,
+      "frame_count": 172,
+      "gpu_active_ms_mean": 3.500045436046512,
+      "cpu_end_to_end_latency_ms_mean": 8.44702461743213,
+      "frame_on_glass_interval_ms_mean": 5.828243459312266
+    },
+    {
+      "start_utc": "2026-10-05T18:02:05.964Z",
+      "end_utc": "2026-10-05T18:02:06.964Z",
+      "fps": 158.99819936407332,
+      "frame_count": 159,
+      "gpu_active_ms_mean": 3.5320042515723267,
+      "cpu_end_to_end_latency_ms_mean": 9.047883500509057,
+      "frame_on_glass_interval_ms_mean": 6.304961478018419
+    },
+    {
+      "start_utc": "2026-10-05T18:02:06.964Z",
+      "end_utc": "2026-10-05T18:02:07.964Z",
+      "fps": 156.99951338918828,
+      "frame_count": 157,
+      "gpu_active_ms_mean": 3.546496356687898,
+      "cpu_end_to_end_latency_ms_mean": 8.940941465248882,
+      "frame_on_glass_interval_ms_mean": 6.2751058916558335
+    },
+    {
+      "start_utc": "2026-10-05T18:02:07.964Z",
+      "end_utc": "2026-10-05T18:02:08.964Z",
+      "fps": 166.0015237471257,
+      "frame_count": 166,
+      "gpu_active_ms_mean": 3.430270391566263,
+      "cpu_end_to_end_latency_ms_mean": 8.7744544450606,
+      "frame_on_glass_interval_ms_mean": 6.103498494064614
+    },
+    {
+      "start_utc": "2026-10-05T18:02:08.964Z",
+      "end_utc": "2026-10-05T18:02:09.964Z",
+      "fps": 168.99953663476197,
+      "frame_count": 169,
+      "gpu_active_ms_mean": 3.4475385266272203,
+      "cpu_end_to_end_latency_ms_mean": 8.533080501623793,
+      "frame_on_glass_interval_ms_mean": 5.845572485157272
+    },
+    {
+      "start_utc": "2026-10-05T18:02:09.964Z",
+      "end_utc": "2026-10-05T18:02:10.964Z",
+      "fps": 168.99760261598692,
+      "frame_count": 169,
+      "gpu_active_ms_mean": 3.549106591715977,
+      "cpu_end_to_end_latency_ms_mean": 8.89510144624231,
+      "frame_on_glass_interval_ms_mean": 5.997125986211289
+    },
+    {
+      "start_utc": "2026-10-05T18:02:10.964Z",
+      "end_utc": "2026-10-05T18:02:11.964Z",
+      "fps": 154.00063336156023,
+      "frame_count": 154,
+      "gpu_active_ms_mean": 3.667790610389608,
+      "cpu_end_to_end_latency_ms_mean": 9.511291797049102,
+      "frame_on_glass_interval_ms_mean": 6.486098755448875
+    },
+    {
+      "start_utc": "2026-10-05T18:02:11.964Z",
+      "end_utc": "2026-10-05T18:02:12.964Z",
+      "fps": 123.00012463343852,
+      "frame_count": 123,
+      "gpu_active_ms_mean": 4.885620869918702,
+      "cpu_end_to_end_latency_ms_mean": 12.280530849712092,
+      "frame_on_glass_interval_ms_mean": 8.147717479567186
+    },
+    {
+      "start_utc": "2026-10-05T18:02:12.964Z",
+      "end_utc": "2026-10-05T18:02:13.964Z",
+      "fps": 117.99917007076333,
+      "frame_count": 118,
+      "gpu_active_ms_mean": 6.739172008474578,
+      "cpu_end_to_end_latency_ms_mean": 14.273842516497282,
+      "frame_on_glass_interval_ms_mean": 8.474578743038888
+    },
+    {
+      "start_utc": "2026-10-05T18:02:13.964Z",
+      "end_utc": "2026-10-05T18:02:14.964Z",
+      "fps": 108.99877859530592,
+      "frame_count": 109,
+      "gpu_active_ms_mean": 8.1696055412844,
+      "cpu_end_to_end_latency_ms_mean": 16.334554975117562,
+      "frame_on_glass_interval_ms_mean": 9.11428631494813
+    },
+    {
+      "start_utc": "2026-10-05T18:02:14.964Z",
+      "end_utc": "2026-10-05T18:02:15.964Z",
+      "fps": 102.99742156761536,
+      "frame_count": 103,
+      "gpu_active_ms_mean": 8.658943019417478,
+      "cpu_end_to_end_latency_ms_mean": 17.217071592701526,
+      "frame_on_glass_interval_ms_mean": 9.598036407712323
+    },
+    {
+      "start_utc": "2026-10-05T18:02:15.964Z",
+      "end_utc": "2026-10-05T18:02:16.964Z",
+      "fps": 106.00408796339704,
+      "frame_count": 106,
+      "gpu_active_ms_mean": 8.389878518867924,
+      "cpu_end_to_end_latency_ms_mean": 16.91587930731915,
+      "frame_on_glass_interval_ms_mean": 9.595287735859493
+    },
+    {
+      "start_utc": "2026-10-05T18:02:16.964Z",
+      "end_utc": "2026-10-05T18:02:17.964Z",
+      "fps": 107.99850656667212,
+      "frame_count": 108,
+      "gpu_active_ms_mean": 8.40240364814815,
+      "cpu_end_to_end_latency_ms_mean": 16.379787051981246,
+      "frame_on_glass_interval_ms_mean": 9.235126543326597
+    },
+    {
+      "start_utc": "2026-10-05T18:02:17.964Z",
+      "end_utc": "2026-10-05T18:02:18.964Z",
+      "fps": 98.99911487893868,
+      "frame_count": 99,
+      "gpu_active_ms_mean": 8.962235868686871,
+      "cpu_end_to_end_latency_ms_mean": 17.88303238425564,
+      "frame_on_glass_interval_ms_mean": 10.101343434235796
+    },
+    {
+      "start_utc": "2026-10-05T18:02:18.964Z",
+      "end_utc": "2026-10-05T18:02:19.964Z",
+      "fps": 104.00053310667558,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 8.537163951923075,
+      "cpu_end_to_end_latency_ms_mean": 17.02769908773077,
+      "frame_on_glass_interval_ms_mean": 9.584552884636931
+    },
+    {
+      "start_utc": "2026-10-05T18:02:19.964Z",
+      "end_utc": "2026-10-05T18:02:20.964Z",
+      "fps": 99.9990344140783,
+      "frame_count": 100,
+      "gpu_active_ms_mean": 9.320119550000001,
+      "cpu_end_to_end_latency_ms_mean": 17.83966079907259,
+      "frame_on_glass_interval_ms_mean": 10.00935791671509
+    },
+    {
+      "start_utc": "2026-10-05T18:02:20.964Z",
+      "end_utc": "2026-10-05T18:02:21.964Z",
+      "fps": 106.00103617727358,
+      "frame_count": 106,
+      "gpu_active_ms_mean": 8.477830037735846,
+      "cpu_end_to_end_latency_ms_mean": 16.66126965450668,
+      "frame_on_glass_interval_ms_mean": 9.487720125657946
+    },
+    {
+      "start_utc": "2026-10-05T18:02:21.964Z",
+      "end_utc": "2026-10-05T18:02:22.964Z",
+      "fps": 99.00061959416016,
+      "frame_count": 99,
+      "gpu_active_ms_mean": 8.865094181818181,
+      "cpu_end_to_end_latency_ms_mean": 17.82875122488335,
+      "frame_on_glass_interval_ms_mean": 10.101026094299883
+    },
+    {
+      "start_utc": "2026-10-05T18:02:22.964Z",
+      "end_utc": "2026-10-05T18:02:23.964Z",
+      "fps": 95.99796299488388,
+      "frame_count": 96,
+      "gpu_active_ms_mean": 9.54757470833333,
+      "cpu_end_to_end_latency_ms_mean": 18.789072870580032,
+      "frame_on_glass_interval_ms_mean": 10.360817708412165
+    },
+    {
+      "start_utc": "2026-10-05T18:02:23.964Z",
+      "end_utc": "2026-10-05T18:02:24.964Z",
+      "fps": 102.00044989784315,
+      "frame_count": 102,
+      "gpu_active_ms_mean": 9.099220950980396,
+      "cpu_end_to_end_latency_ms_mean": 17.70964534679318,
+      "frame_on_glass_interval_ms_mean": 9.800198529310542
+    },
+    {
+      "start_utc": "2026-10-05T18:02:24.964Z",
+      "end_utc": "2026-10-05T18:02:25.964Z",
+      "fps": 103.99986362475158,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 8.67801483653846,
+      "cpu_end_to_end_latency_ms_mean": 17.31864379661811,
+      "frame_on_glass_interval_ms_mean": 9.615644230787158
+    },
+    {
+      "start_utc": "2026-10-05T18:02:25.964Z",
+      "end_utc": "2026-10-05T18:02:26.964Z",
+      "fps": 102.99600962363152,
+      "frame_count": 103,
+      "gpu_active_ms_mean": 9.05514891262136,
+      "cpu_end_to_end_latency_ms_mean": 17.64867595934933,
+      "frame_on_glass_interval_ms_mean": 9.707876213812677
+    },
+    {
+      "start_utc": "2026-10-05T18:02:26.964Z",
+      "end_utc": "2026-10-05T18:02:27.964Z",
+      "fps": 102.00302776740958,
+      "frame_count": 102,
+      "gpu_active_ms_mean": 9.011871460784311,
+      "cpu_end_to_end_latency_ms_mean": 17.63215683162094,
+      "frame_on_glass_interval_ms_mean": 9.646928921403527
+    },
+    {
+      "start_utc": "2026-10-05T18:02:27.964Z",
+      "end_utc": "2026-10-05T18:02:28.964Z",
+      "fps": 99.0016286641068,
+      "frame_count": 99,
+      "gpu_active_ms_mean": 9.131950282828281,
+      "cpu_end_to_end_latency_ms_mean": 18.021058431424372,
+      "frame_on_glass_interval_ms_mean": 10.310671296361082
+    },
+    {
+      "start_utc": "2026-10-05T18:02:28.964Z",
+      "end_utc": "2026-10-05T18:02:29.964Z",
+      "fps": 100.99641216625862,
+      "frame_count": 101,
+      "gpu_active_ms_mean": 9.132104623762373,
+      "cpu_end_to_end_latency_ms_mean": 17.745103933133812,
+      "frame_on_glass_interval_ms_mean": 9.767666666556408
+    },
+    {
+      "start_utc": "2026-10-05T18:02:29.964Z",
+      "end_utc": "2026-10-05T18:02:30.964Z",
+      "fps": 105.00224058640778,
+      "frame_count": 105,
+      "gpu_active_ms_mean": 8.741167257142857,
+      "cpu_end_to_end_latency_ms_mean": 17.406618225920415,
+      "frame_on_glass_interval_ms_mean": 9.5997892857884
+    },
+    {
+      "start_utc": "2026-10-05T18:02:30.964Z",
+      "end_utc": "2026-10-05T18:02:31.964Z",
+      "fps": 108.00207285091031,
+      "frame_count": 108,
+      "gpu_active_ms_mean": 8.547943648148149,
+      "cpu_end_to_end_latency_ms_mean": 16.62264118662009,
+      "frame_on_glass_interval_ms_mean": 9.25244058641881
+    },
+    {
+      "start_utc": "2026-10-05T18:02:31.964Z",
+      "end_utc": "2026-10-05T18:02:32.964Z",
+      "fps": 107.99760537688731,
+      "frame_count": 108,
+      "gpu_active_ms_mean": 8.1615432962963,
+      "cpu_end_to_end_latency_ms_mean": 16.422396258955512,
+      "frame_on_glass_interval_ms_mean": 9.289163194437235
+    },
+    {
+      "start_utc": "2026-10-05T18:02:32.964Z",
+      "end_utc": "2026-10-05T18:02:33.964Z",
+      "fps": 104.99982476263682,
+      "frame_count": 105,
+      "gpu_active_ms_mean": 8.545926990476188,
+      "cpu_end_to_end_latency_ms_mean": 16.98204244076762,
+      "frame_on_glass_interval_ms_mean": 9.562577380953977
+    },
+    {
+      "start_utc": "2026-10-05T18:02:33.964Z",
+      "end_utc": "2026-10-05T18:02:34.964Z",
+      "fps": 104.00176671168285,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 8.727876317307693,
+      "cpu_end_to_end_latency_ms_mean": 17.372256774251582,
+      "frame_on_glass_interval_ms_mean": 9.606236778871299
+    },
+    {
+      "start_utc": "2026-10-05T18:02:34.964Z",
+      "end_utc": "2026-10-05T18:02:35.964Z",
+      "fps": 96.99832335032394,
+      "frame_count": 97,
+      "gpu_active_ms_mean": 9.022104680412365,
+      "cpu_end_to_end_latency_ms_mean": 17.85419455707822,
+      "frame_on_glass_interval_ms_mean": 10.190249140765614
+    },
+    {
+      "start_utc": "2026-10-05T18:02:35.964Z",
+      "end_utc": "2026-10-05T18:02:36.964Z",
+      "fps": 95.00097961243826,
+      "frame_count": 95,
+      "gpu_active_ms_mean": 9.717990357894733,
+      "cpu_end_to_end_latency_ms_mean": 19.498770094574674,
+      "frame_on_glass_interval_ms_mean": 10.655119298271051
+    },
+    {
+      "start_utc": "2026-10-05T18:02:36.964Z",
+      "end_utc": "2026-10-05T18:02:37.964Z",
+      "fps": 104.99927402044617,
+      "frame_count": 105,
+      "gpu_active_ms_mean": 8.645688352380951,
+      "cpu_end_to_end_latency_ms_mean": 17.2126027705547,
+      "frame_on_glass_interval_ms_mean": 9.505235714494205
+    },
+    {
+      "start_utc": "2026-10-05T18:02:37.964Z",
+      "end_utc": "2026-10-05T18:02:38.964Z",
+      "fps": 102.99975442944901,
+      "frame_count": 103,
+      "gpu_active_ms_mean": 8.905427184466015,
+      "cpu_end_to_end_latency_ms_mean": 17.31839721165688,
+      "frame_on_glass_interval_ms_mean": 9.649365695613861
+    },
+    {
+      "start_utc": "2026-10-05T18:02:38.964Z",
+      "end_utc": "2026-10-05T18:02:39.964Z",
+      "fps": 97.9969626414434,
+      "frame_count": 98,
+      "gpu_active_ms_mean": 9.391811163265306,
+      "cpu_end_to_end_latency_ms_mean": 18.798051397221123,
+      "frame_on_glass_interval_ms_mean": 10.231498299506303
+    },
+    {
+      "start_utc": "2026-10-05T18:02:39.964Z",
+      "end_utc": "2026-10-05T18:02:40.964Z",
+      "fps": 108.00320587137485,
+      "frame_count": 108,
+      "gpu_active_ms_mean": 8.808173990740741,
+      "cpu_end_to_end_latency_ms_mean": 17.019940616726807,
+      "frame_on_glass_interval_ms_mean": 9.259769290144538
+    },
+    {
+      "start_utc": "2026-10-05T18:02:40.964Z",
+      "end_utc": "2026-10-05T18:02:41.964Z",
+      "fps": 103.9989462005583,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 8.614644134615382,
+      "cpu_end_to_end_latency_ms_mean": 16.794657756690867,
+      "frame_on_glass_interval_ms_mean": 9.617925480527516
+    },
+    {
+      "start_utc": "2026-10-05T18:02:41.964Z",
+      "end_utc": "2026-10-05T18:02:42.964Z",
+      "fps": 65.99965381803894,
+      "frame_count": 66,
+      "gpu_active_ms_mean": 9.821089545454548,
+      "cpu_end_to_end_latency_ms_mean": 23.237588732048277,
+      "frame_on_glass_interval_ms_mean": 15.232311237592842
+    },
+    {
+      "start_utc": "2026-10-05T18:02:42.964Z",
+      "end_utc": "2026-10-05T18:02:43.964Z",
+      "fps": 101.99586598939462,
+      "frame_count": 102,
+      "gpu_active_ms_mean": 9.575294137254902,
+      "cpu_end_to_end_latency_ms_mean": 18.355879070655003,
+      "frame_on_glass_interval_ms_mean": 9.741780228853482
+    },
+    {
+      "start_utc": "2026-10-05T18:02:43.964Z",
+      "end_utc": "2026-10-05T18:02:44.964Z",
+      "fps": 104.00391784167742,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 9.054346528846155,
+      "cpu_end_to_end_latency_ms_mean": 17.580294850911464,
+      "frame_on_glass_interval_ms_mean": 9.63153365368131
+    },
+    {
+      "start_utc": "2026-10-05T18:02:44.964Z",
+      "end_utc": "2026-10-05T18:02:45.964Z",
+      "fps": 99.00018292699282,
+      "frame_count": 99,
+      "gpu_active_ms_mean": 9.20609118181818,
+      "cpu_end_to_end_latency_ms_mean": 17.819983576897137,
+      "frame_on_glass_interval_ms_mean": 10.021846380432823
+    },
+    {
+      "start_utc": "2026-10-05T18:02:45.964Z",
+      "end_utc": "2026-10-05T18:02:46.964Z",
+      "fps": 105.99714429919581,
+      "frame_count": 106,
+      "gpu_active_ms_mean": 8.732409915094339,
+      "cpu_end_to_end_latency_ms_mean": 17.017012571571133,
+      "frame_on_glass_interval_ms_mean": 9.380370283220403
+    },
+    {
+      "start_utc": "2026-10-05T18:02:46.964Z",
+      "end_utc": "2026-10-05T18:02:47.771Z",
+      "fps": 65.6784760159624,
+      "frame_count": 53,
+      "gpu_active_ms_mean": 9.10705458490566,
+      "cpu_end_to_end_latency_ms_mean": 19.33108208226567,
+      "frame_on_glass_interval_ms_mean": 11.794731131851464
+    },
+    {
+      "start_utc": "2026-10-05T18:02:47.771Z",
+      "end_utc": "2026-10-05T18:02:48.964Z",
+      "fps": 90.52372365519058,
+      "frame_count": 108,
+      "gpu_active_ms_mean": 7.167414638888889,
+      "cpu_end_to_end_latency_ms_mean": 13.155555909314124,
+      "frame_on_glass_interval_ms_mean": 6.972566588888397
+    },
+    {
+      "start_utc": "2026-10-05T18:02:48.964Z",
+      "end_utc": "2026-10-05T18:02:49.964Z",
+      "fps": 173.00796092425784,
+      "frame_count": 173,
+      "gpu_active_ms_mean": 5.241240982658962,
+      "cpu_end_to_end_latency_ms_mean": 9.91049629142858,
+      "frame_on_glass_interval_ms_mean": 5.782606695560641
+    },
+    {
+      "start_utc": "2026-10-05T18:02:49.964Z",
+      "end_utc": "2026-10-05T18:02:50.964Z",
+      "fps": 183.00092715494682,
+      "frame_count": 183,
+      "gpu_active_ms_mean": 4.637768005464484,
+      "cpu_end_to_end_latency_ms_mean": 8.840536123301957,
+      "frame_on_glass_interval_ms_mean": 5.448522085649638
+    },
+    {
+      "start_utc": "2026-10-05T18:02:50.964Z",
+      "end_utc": "2026-10-05T18:02:51.964Z",
+      "fps": 169.99872327809732,
+      "frame_count": 170,
+      "gpu_active_ms_mean": 5.173370311764707,
+      "cpu_end_to_end_latency_ms_mean": 9.955151870449567,
+      "frame_on_glass_interval_ms_mean": 5.899061029434533
+    },
+    {
+      "start_utc": "2026-10-05T18:02:51.964Z",
+      "end_utc": "2026-10-05T18:02:52.964Z",
+      "fps": 167.00096554122314,
+      "frame_count": 167,
+      "gpu_active_ms_mean": 5.260568892215569,
+      "cpu_end_to_end_latency_ms_mean": 10.162578683770347,
+      "frame_on_glass_interval_ms_mean": 5.98528792417307
+    },
+    {
+      "start_utc": "2026-10-05T18:02:52.964Z",
+      "end_utc": "2026-10-05T18:02:53.964Z",
+      "fps": 178.99976527721665,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.744383106145253,
+      "cpu_end_to_end_latency_ms_mean": 9.248155180245181,
+      "frame_on_glass_interval_ms_mean": 5.574221368657955
+    },
+    {
+      "start_utc": "2026-10-05T18:02:53.964Z",
+      "end_utc": "2026-10-05T18:02:54.964Z",
+      "fps": 175.998909003345,
+      "frame_count": 176,
+      "gpu_active_ms_mean": 4.767844971590908,
+      "cpu_end_to_end_latency_ms_mean": 9.337488299603468,
+      "frame_on_glass_interval_ms_mean": 5.678844460238575
+    },
+    {
+      "start_utc": "2026-10-05T18:02:54.964Z",
+      "end_utc": "2026-10-05T18:02:55.964Z",
+      "fps": 177.00126601171024,
+      "frame_count": 177,
+      "gpu_active_ms_mean": 4.854719909604519,
+      "cpu_end_to_end_latency_ms_mean": 9.423379167897291,
+      "frame_on_glass_interval_ms_mean": 5.674762241075363
+    },
+    {
+      "start_utc": "2026-10-05T18:02:55.964Z",
+      "end_utc": "2026-10-05T18:02:56.964Z",
+      "fps": 184.99730948546443,
+      "frame_count": 185,
+      "gpu_active_ms_mean": 4.347960421621623,
+      "cpu_end_to_end_latency_ms_mean": 8.656307363354072,
+      "frame_on_glass_interval_ms_mean": 5.407113963863938
+    },
+    {
+      "start_utc": "2026-10-05T18:02:56.964Z",
+      "end_utc": "2026-10-05T18:02:57.935Z",
+      "fps": 177.07522926749826,
+      "frame_count": 172,
+      "gpu_active_ms_mean": 4.63726180813953,
+      "cpu_end_to_end_latency_ms_mean": 9.190422614940259,
+      "frame_on_glass_interval_ms_mean": 5.634718265609145
+    },
+    {
+      "start_utc": "2026-10-05T18:02:57.935Z",
+      "end_utc": "2026-10-05T18:02:58.964Z",
+      "fps": 170.1246830021962,
+      "frame_count": 175,
+      "gpu_active_ms_mean": 5.222991297142858,
+      "cpu_end_to_end_latency_ms_mean": 9.988207278407312,
+      "frame_on_glass_interval_ms_mean": 5.852257142874545
+    },
+    {
+      "start_utc": "2026-10-05T18:02:58.964Z",
+      "end_utc": "2026-10-05T18:02:59.964Z",
+      "fps": 179.00167508500746,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.768208536312845,
+      "cpu_end_to_end_latency_ms_mean": 9.329106234496605,
+      "frame_on_glass_interval_ms_mean": 5.6088014431661986
+    },
+    {
+      "start_utc": "2026-10-05T18:02:59.964Z",
+      "end_utc": "2026-10-05T18:03:00.964Z",
+      "fps": 178.0010397494969,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.4161696011235945,
+      "cpu_end_to_end_latency_ms_mean": 8.754113204273645,
+      "frame_on_glass_interval_ms_mean": 5.619600187304293
+    },
+    {
+      "start_utc": "2026-10-05T18:03:00.964Z",
+      "end_utc": "2026-10-05T18:03:01.964Z",
+      "fps": 179.9992275271188,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.655627744444443,
+      "cpu_end_to_end_latency_ms_mean": 8.920011498654882,
+      "frame_on_glass_interval_ms_mean": 5.5571293980594625
+    },
+    {
+      "start_utc": "2026-10-05T18:03:01.964Z",
+      "end_utc": "2026-10-05T18:03:02.964Z",
+      "fps": 179.00019204637152,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.935645033519552,
+      "cpu_end_to_end_latency_ms_mean": 9.405473839490305,
+      "frame_on_glass_interval_ms_mean": 5.587389897529098
+    },
+    {
+      "start_utc": "2026-10-05T18:03:02.964Z",
+      "end_utc": "2026-10-05T18:03:03.964Z",
+      "fps": 174.9978721400549,
+      "frame_count": 175,
+      "gpu_active_ms_mean": 4.868588537142857,
+      "cpu_end_to_end_latency_ms_mean": 9.41313442142148,
+      "frame_on_glass_interval_ms_mean": 5.682467857176172
+    },
+    {
+      "start_utc": "2026-10-05T18:03:03.964Z",
+      "end_utc": "2026-10-05T18:03:04.964Z",
+      "fps": 181.00226560090638,
+      "frame_count": 181,
+      "gpu_active_ms_mean": 4.677156646408839,
+      "cpu_end_to_end_latency_ms_mean": 9.106662894923302,
+      "frame_on_glass_interval_ms_mean": 5.552469152964919
+    },
+    {
+      "start_utc": "2026-10-05T18:03:04.964Z",
+      "end_utc": "2026-10-05T18:03:05.964Z",
+      "fps": 170.99255987592284,
+      "frame_count": 171,
+      "gpu_active_ms_mean": 4.739938309941523,
+      "cpu_end_to_end_latency_ms_mean": 9.362837136484824,
+      "frame_on_glass_interval_ms_mean": 5.819002192941282
+    },
+    {
+      "start_utc": "2026-10-05T18:03:05.964Z",
+      "end_utc": "2026-10-05T18:03:06.964Z",
+      "fps": 171.0068801429329,
+      "frame_count": 171,
+      "gpu_active_ms_mean": 5.042571555555556,
+      "cpu_end_to_end_latency_ms_mean": 10.021687028636851,
+      "frame_on_glass_interval_ms_mean": 5.889790691911891
+    },
+    {
+      "start_utc": "2026-10-05T18:03:06.964Z",
+      "end_utc": "2026-10-05T18:03:07.964Z",
+      "fps": 179.99862671946167,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.593038227777776,
+      "cpu_end_to_end_latency_ms_mean": 8.969562195933477,
+      "frame_on_glass_interval_ms_mean": 5.543934027890726
+    },
+    {
+      "start_utc": "2026-10-05T18:03:07.964Z",
+      "end_utc": "2026-10-05T18:03:08.964Z",
+      "fps": 190.0003284221604,
+      "frame_count": 190,
+      "gpu_active_ms_mean": 4.158097310526315,
+      "cpu_end_to_end_latency_ms_mean": 8.239424266656371,
+      "frame_on_glass_interval_ms_mean": 5.260619298266983
+    },
+    {
+      "start_utc": "2026-10-05T18:03:08.964Z",
+      "end_utc": "2026-10-05T18:03:09.964Z",
+      "fps": 181.99971795125802,
+      "frame_count": 182,
+      "gpu_active_ms_mean": 4.421176631868129,
+      "cpu_end_to_end_latency_ms_mean": 8.590142561153478,
+      "frame_on_glass_interval_ms_mean": 5.497491071294932
+    },
+    {
+      "start_utc": "2026-10-05T18:03:09.964Z",
+      "end_utc": "2026-10-05T18:03:10.964Z",
+      "fps": 179.00189914334103,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.773183776536309,
+      "cpu_end_to_end_latency_ms_mean": 9.122313016846089,
+      "frame_on_glass_interval_ms_mean": 5.589960428317697
+    },
+    {
+      "start_utc": "2026-10-05T18:03:10.964Z",
+      "end_utc": "2026-10-05T18:03:11.964Z",
+      "fps": 180.00146986254282,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.693730816666669,
+      "cpu_end_to_end_latency_ms_mean": 9.083909635470869,
+      "frame_on_glass_interval_ms_mean": 5.555175694462378
+    },
+    {
+      "start_utc": "2026-10-05T18:03:11.964Z",
+      "end_utc": "2026-10-05T18:03:12.964Z",
+      "fps": 160.99773529377404,
+      "frame_count": 161,
+      "gpu_active_ms_mean": 5.325804639751551,
+      "cpu_end_to_end_latency_ms_mean": 10.376733632668598,
+      "frame_on_glass_interval_ms_mean": 6.2093739649092905
+    },
+    {
+      "start_utc": "2026-10-05T18:03:12.964Z",
+      "end_utc": "2026-10-05T18:03:13.964Z",
+      "fps": 177.99983024613357,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.878757713483142,
+      "cpu_end_to_end_latency_ms_mean": 9.262340510554422,
+      "frame_on_glass_interval_ms_mean": 5.617849250831589
+    },
+    {
+      "start_utc": "2026-10-05T18:03:13.964Z",
+      "end_utc": "2026-10-05T18:03:14.964Z",
+      "fps": 172.00101495388034,
+      "frame_count": 172,
+      "gpu_active_ms_mean": 5.215786395348838,
+      "cpu_end_to_end_latency_ms_mean": 9.83695197223718,
+      "frame_on_glass_interval_ms_mean": 5.81065673454865
+    },
+    {
+      "start_utc": "2026-10-05T18:03:14.964Z",
+      "end_utc": "2026-10-05T18:03:15.964Z",
+      "fps": 174.9992281232547,
+      "frame_count": 175,
+      "gpu_active_ms_mean": 4.709863211428574,
+      "cpu_end_to_end_latency_ms_mean": 9.129036789527163,
+      "frame_on_glass_interval_ms_mean": 5.718755714229441
+    },
+    {
+      "start_utc": "2026-10-05T18:03:15.964Z",
+      "end_utc": "2026-10-05T18:03:16.964Z",
+      "fps": 178.0008063352872,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.978131398876407,
+      "cpu_end_to_end_latency_ms_mean": 9.510444914902497,
+      "frame_on_glass_interval_ms_mean": 5.62705711613336
+    },
+    {
+      "start_utc": "2026-10-05T18:03:16.964Z",
+      "end_utc": "2026-10-05T18:03:17.964Z",
+      "fps": 173.99475232692495,
+      "frame_count": 174,
+      "gpu_active_ms_mean": 4.679661522988506,
+      "cpu_end_to_end_latency_ms_mean": 9.245710876293952,
+      "frame_on_glass_interval_ms_mean": 5.701147988485441
+    },
+    {
+      "start_utc": "2026-10-05T18:03:17.964Z",
+      "end_utc": "2026-10-05T18:03:18.964Z",
+      "fps": 179.00514271728932,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.6470035139664825,
+      "cpu_end_to_end_latency_ms_mean": 9.040707570446042,
+      "frame_on_glass_interval_ms_mean": 5.623074255099354
+    },
+    {
+      "start_utc": "2026-10-05T18:03:18.964Z",
+      "end_utc": "2026-10-05T18:03:19.964Z",
+      "fps": 178.00091243257936,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.618282589887638,
+      "cpu_end_to_end_latency_ms_mean": 8.94793108438555,
+      "frame_on_glass_interval_ms_mean": 5.613484316547349
+    },
+    {
+      "start_utc": "2026-10-05T18:03:19.964Z",
+      "end_utc": "2026-10-05T18:03:20.964Z",
+      "fps": 178.99889040681109,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.693653698324023,
+      "cpu_end_to_end_latency_ms_mean": 9.006136091485848,
+      "frame_on_glass_interval_ms_mean": 5.587267225371496
+    },
+    {
+      "start_utc": "2026-10-05T18:03:20.964Z",
+      "end_utc": "2026-10-05T18:03:21.964Z",
+      "fps": 180.00160933979757,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.768602811111109,
+      "cpu_end_to_end_latency_ms_mean": 9.033234460285811,
+      "frame_on_glass_interval_ms_mean": 5.557433333241432
+    },
+    {
+      "start_utc": "2026-10-05T18:03:21.964Z",
+      "end_utc": "2026-10-05T18:03:22.964Z",
+      "fps": 181.99585614102804,
+      "frame_count": 182,
+      "gpu_active_ms_mean": 4.744286346153844,
+      "cpu_end_to_end_latency_ms_mean": 8.990509499019208,
+      "frame_on_glass_interval_ms_mean": 5.471083333339686
+    },
+    {
+      "start_utc": "2026-10-05T18:03:22.964Z",
+      "end_utc": "2026-10-05T18:03:23.964Z",
+      "fps": 176.00257018981554,
+      "frame_count": 176,
+      "gpu_active_ms_mean": 4.88995072159091,
+      "cpu_end_to_end_latency_ms_mean": 9.277809327613795,
+      "frame_on_glass_interval_ms_mean": 5.70515719697472
+    },
+    {
+      "start_utc": "2026-10-05T18:03:23.964Z",
+      "end_utc": "2026-10-05T18:03:24.964Z",
+      "fps": 181.00023734600674,
+      "frame_count": 181,
+      "gpu_active_ms_mean": 4.668293635359116,
+      "cpu_end_to_end_latency_ms_mean": 8.895099795943135,
+      "frame_on_glass_interval_ms_mean": 5.523354051607656
+    },
+    {
+      "start_utc": "2026-10-05T18:03:24.964Z",
+      "end_utc": "2026-10-05T18:03:25.964Z",
+      "fps": 177.00151921622557,
+      "frame_count": 177,
+      "gpu_active_ms_mean": 4.769063118644065,
+      "cpu_end_to_end_latency_ms_mean": 9.142827106794963,
+      "frame_on_glass_interval_ms_mean": 5.653115113050083
+    },
+    {
+      "start_utc": "2026-10-05T18:03:25.964Z",
+      "end_utc": "2026-10-05T18:03:26.964Z",
+      "fps": 180.99633200449458,
+      "frame_count": 181,
+      "gpu_active_ms_mean": 4.7568147016574605,
+      "cpu_end_to_end_latency_ms_mean": 9.100601907584107,
+      "frame_on_glass_interval_ms_mean": 5.524282918848066
+    },
+    {
+      "start_utc": "2026-10-05T18:03:26.964Z",
+      "end_utc": "2026-10-05T18:03:27.964Z",
+      "fps": 182.99890924150205,
+      "frame_count": 183,
+      "gpu_active_ms_mean": 4.546811786885245,
+      "cpu_end_to_end_latency_ms_mean": 8.810904996006501,
+      "frame_on_glass_interval_ms_mean": 5.461868169384148
+    },
+    {
+      "start_utc": "2026-10-05T18:03:27.964Z",
+      "end_utc": "2026-10-05T18:03:28.964Z",
+      "fps": 181.00254610782156,
+      "frame_count": 181,
+      "gpu_active_ms_mean": 4.815580154696134,
+      "cpu_end_to_end_latency_ms_mean": 9.072534901891368,
+      "frame_on_glass_interval_ms_mean": 5.52679903326731
+    },
+    {
+      "start_utc": "2026-10-05T18:03:28.964Z",
+      "end_utc": "2026-10-05T18:03:29.964Z",
+      "fps": 169.99914884993413,
+      "frame_count": 170,
+      "gpu_active_ms_mean": 5.02361428235294,
+      "cpu_end_to_end_latency_ms_mean": 9.698256026604213,
+      "frame_on_glass_interval_ms_mean": 5.862204901880913
+    },
+    {
+      "start_utc": "2026-10-05T18:03:29.964Z",
+      "end_utc": "2026-10-05T18:03:30.964Z",
+      "fps": 177.99853588354875,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.701619292134832,
+      "cpu_end_to_end_latency_ms_mean": 9.149509745655225,
+      "frame_on_glass_interval_ms_mean": 5.592517790206697
+    },
+    {
+      "start_utc": "2026-10-05T18:03:30.964Z",
+      "end_utc": "2026-10-05T18:03:31.964Z",
+      "fps": 180.00357277332148,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.63789317222222,
+      "cpu_end_to_end_latency_ms_mean": 9.056174437541307,
+      "frame_on_glass_interval_ms_mean": 5.603130787171216
+    },
+    {
+      "start_utc": "2026-10-05T18:03:31.964Z",
+      "end_utc": "2026-10-05T18:03:32.964Z",
+      "fps": 179.99826194534091,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.577270400000001,
+      "cpu_end_to_end_latency_ms_mean": 8.808041130800524,
+      "frame_on_glass_interval_ms_mean": 5.546875925857522
+    },
+    {
+      "start_utc": "2026-10-05T18:03:32.964Z",
+      "end_utc": "2026-10-05T18:03:33.964Z",
+      "fps": 179.00259266078572,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.602283039106147,
+      "cpu_end_to_end_latency_ms_mean": 8.906736422665729,
+      "frame_on_glass_interval_ms_mean": 5.600503026039532
+    },
+    {
+      "start_utc": "2026-10-05T18:03:33.964Z",
+      "end_utc": "2026-10-05T18:03:34.964Z",
+      "fps": 177.00072795452053,
+      "frame_count": 177,
+      "gpu_active_ms_mean": 5.014836423728815,
+      "cpu_end_to_end_latency_ms_mean": 9.469222353368808,
+      "frame_on_glass_interval_ms_mean": 5.645431026337552
+    },
+    {
+      "start_utc": "2026-10-05T18:03:34.964Z",
+      "end_utc": "2026-10-05T18:03:35.964Z",
+      "fps": 189.9967158408407,
+      "frame_count": 190,
+      "gpu_active_ms_mean": 4.369900068421051,
+      "cpu_end_to_end_latency_ms_mean": 8.370725169324464,
+      "frame_on_glass_interval_ms_mean": 5.262003070215303
+    },
+    {
+      "start_utc": "2026-10-05T18:03:35.964Z",
+      "end_utc": "2026-10-05T18:03:36.964Z",
+      "fps": 186.00073170949773,
+      "frame_count": 186,
+      "gpu_active_ms_mean": 4.603506258064516,
+      "cpu_end_to_end_latency_ms_mean": 8.80098199535672,
+      "frame_on_glass_interval_ms_mean": 5.383119623612372
+    },
+    {
+      "start_utc": "2026-10-05T18:03:36.964Z",
+      "end_utc": "2026-10-05T18:03:37.964Z",
+      "fps": 178.998634348798,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.672904709497207,
+      "cpu_end_to_end_latency_ms_mean": 9.036507142392928,
+      "frame_on_glass_interval_ms_mean": 5.580528864120628
+    },
+    {
+      "start_utc": "2026-10-05T18:03:37.964Z",
+      "end_utc": "2026-10-05T18:03:38.964Z",
+      "fps": 173.99937772973396,
+      "frame_count": 174,
+      "gpu_active_ms_mean": 4.922120597701152,
+      "cpu_end_to_end_latency_ms_mean": 9.397910064857069,
+      "frame_on_glass_interval_ms_mean": 5.742249521125783
+    },
+    {
+      "start_utc": "2026-10-05T18:03:38.964Z",
+      "end_utc": "2026-10-05T18:03:39.964Z",
+      "fps": 173.00053620504633,
+      "frame_count": 173,
+      "gpu_active_ms_mean": 4.958166219653178,
+      "cpu_end_to_end_latency_ms_mean": 9.449358020822997,
+      "frame_on_glass_interval_ms_mean": 5.783282514430066
+    },
+    {
+      "start_utc": "2026-10-05T18:03:39.964Z",
+      "end_utc": "2026-10-05T18:03:40.964Z",
+      "fps": 145.99893832978748,
+      "frame_count": 146,
+      "gpu_active_ms_mean": 4.953536130136988,
+      "cpu_end_to_end_latency_ms_mean": 10.412567112338092,
+      "frame_on_glass_interval_ms_mean": 6.813813926857794
+    },
+    {
+      "start_utc": "2026-10-05T18:03:40.964Z",
+      "end_utc": "2026-10-05T18:03:41.964Z",
+      "fps": 173.0007115035709,
+      "frame_count": 173,
+      "gpu_active_ms_mean": 5.227677375722544,
+      "cpu_end_to_end_latency_ms_mean": 9.788266038912418,
+      "frame_on_glass_interval_ms_mean": 5.7863417630638345
+    },
+    {
+      "start_utc": "2026-10-05T18:03:41.964Z",
+      "end_utc": "2026-10-05T18:03:42.964Z",
+      "fps": 182.00499023768361,
+      "frame_count": 182,
+      "gpu_active_ms_mean": 4.780149241758242,
+      "cpu_end_to_end_latency_ms_mean": 9.094914735824505,
+      "frame_on_glass_interval_ms_mean": 5.52621222523957
+    },
+    {
+      "start_utc": "2026-10-05T18:03:42.964Z",
+      "end_utc": "2026-10-05T18:03:43.964Z",
+      "fps": 179.99879837838301,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.836952472222223,
+      "cpu_end_to_end_latency_ms_mean": 9.273207357101557,
+      "frame_on_glass_interval_ms_mean": 5.556422916641976
+    },
+    {
+      "start_utc": "2026-10-05T18:03:43.964Z",
+      "end_utc": "2026-10-05T18:03:44.964Z",
+      "fps": 178.9936627009127,
+      "frame_count": 179,
+      "gpu_active_ms_mean": 4.942996541899442,
+      "cpu_end_to_end_latency_ms_mean": 9.212553247486829,
+      "frame_on_glass_interval_ms_mean": 5.585839851094701
+    },
+    {
+      "start_utc": "2026-10-05T18:03:44.964Z",
+      "end_utc": "2026-10-05T18:03:45.964Z",
+      "fps": 173.9968057265184,
+      "frame_count": 174,
+      "gpu_active_ms_mean": 4.7865773045977,
+      "cpu_end_to_end_latency_ms_mean": 9.264540349918782,
+      "frame_on_glass_interval_ms_mean": 5.716320641750962
+    },
+    {
+      "start_utc": "2026-10-05T18:03:45.964Z",
+      "end_utc": "2026-10-05T18:03:46.964Z",
+      "fps": 181.00480098345503,
+      "frame_count": 181,
+      "gpu_active_ms_mean": 4.861154425414366,
+      "cpu_end_to_end_latency_ms_mean": 9.252628828308838,
+      "frame_on_glass_interval_ms_mean": 5.518863950270737
+    },
+    {
+      "start_utc": "2026-10-05T18:03:46.964Z",
+      "end_utc": "2026-10-05T18:03:47.964Z",
+      "fps": 179.99989271170335,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.871274350000004,
+      "cpu_end_to_end_latency_ms_mean": 9.34781751938216,
+      "frame_on_glass_interval_ms_mean": 5.591236342540165
+    },
+    {
+      "start_utc": "2026-10-05T18:03:47.964Z",
+      "end_utc": "2026-10-05T18:03:48.964Z",
+      "fps": 180.00013947497686,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.8426768666666655,
+      "cpu_end_to_end_latency_ms_mean": 9.248045996517046,
+      "frame_on_glass_interval_ms_mean": 5.5175087962804055
+    },
+    {
+      "start_utc": "2026-10-05T18:03:48.964Z",
+      "end_utc": "2026-10-05T18:03:49.964Z",
+      "fps": 177.00150866602297,
+      "frame_count": 177,
+      "gpu_active_ms_mean": 4.814043994350284,
+      "cpu_end_to_end_latency_ms_mean": 9.331836078729017,
+      "frame_on_glass_interval_ms_mean": 5.6637090395367835
+    },
+    {
+      "start_utc": "2026-10-05T18:03:49.964Z",
+      "end_utc": "2026-10-05T18:03:50.964Z",
+      "fps": 180.00017166154066,
+      "frame_count": 180,
+      "gpu_active_ms_mean": 4.7268287777777775,
+      "cpu_end_to_end_latency_ms_mean": 9.046055941467381,
+      "frame_on_glass_interval_ms_mean": 5.578064583338953
+    },
+    {
+      "start_utc": "2026-10-05T18:03:50.964Z",
+      "end_utc": "2026-10-05T18:03:51.964Z",
+      "fps": 176.99694054646739,
+      "frame_count": 177,
+      "gpu_active_ms_mean": 4.723032367231639,
+      "cpu_end_to_end_latency_ms_mean": 9.048350624138973,
+      "frame_on_glass_interval_ms_mean": 5.622116996318702
+    },
+    {
+      "start_utc": "2026-10-05T18:03:51.964Z",
+      "end_utc": "2026-10-05T18:03:52.964Z",
+      "fps": 142.99896014492884,
+      "frame_count": 143,
+      "gpu_active_ms_mean": 5.54485497902098,
+      "cpu_end_to_end_latency_ms_mean": 10.847941272602242,
+      "frame_on_glass_interval_ms_mean": 6.994788752912732
+    },
+    {
+      "start_utc": "2026-10-05T18:03:52.964Z",
+      "end_utc": "2026-10-05T18:03:53.964Z",
+      "fps": 104.00215105691056,
+      "frame_count": 104,
+      "gpu_active_ms_mean": 7.637896221153847,
+      "cpu_end_to_end_latency_ms_mean": 14.49923793832288,
+      "frame_on_glass_interval_ms_mean": 9.620694310937186
+    },
+    {
+      "start_utc": "2026-10-05T18:03:53.964Z",
+      "end_utc": "2026-10-05T18:03:54.964Z",
+      "fps": 148.99801066193652,
+      "frame_count": 149,
+      "gpu_active_ms_mean": 6.396590248322147,
+      "cpu_end_to_end_latency_ms_mean": 11.708938837990528,
+      "frame_on_glass_interval_ms_mean": 6.7155852907215365
+    },
+    {
+      "start_utc": "2026-10-05T18:03:54.964Z",
+      "end_utc": "2026-10-05T18:03:55.964Z",
+      "fps": 154.00198271443048,
+      "frame_count": 154,
+      "gpu_active_ms_mean": 5.873919577922075,
+      "cpu_end_to_end_latency_ms_mean": 11.021045559348973,
+      "frame_on_glass_interval_ms_mean": 6.494994047732854
+    },
+    {
+      "start_utc": "2026-10-05T18:03:55.964Z",
+      "end_utc": "2026-10-05T18:03:56.964Z",
+      "fps": 165.00115067569192,
+      "frame_count": 165,
+      "gpu_active_ms_mean": 5.546292745454546,
+      "cpu_end_to_end_latency_ms_mean": 10.344291030020086,
+      "frame_on_glass_interval_ms_mean": 6.079860606096742
+    },
+    {
+      "start_utc": "2026-10-05T18:03:56.964Z",
+      "end_utc": "2026-10-05T18:03:57.964Z",
+      "fps": 164.99783637976626,
+      "frame_count": 165,
+      "gpu_active_ms_mean": 5.386268018181818,
+      "cpu_end_to_end_latency_ms_mean": 10.1262627502861,
+      "frame_on_glass_interval_ms_mean": 6.060428787763653
+    },
+    {
+      "start_utc": "2026-10-05T18:03:57.964Z",
+      "end_utc": "2026-10-05T18:03:58.964Z",
+      "fps": 178.00176121546994,
+      "frame_count": 178,
+      "gpu_active_ms_mean": 4.858464842696631,
+      "cpu_end_to_end_latency_ms_mean": 9.128191844027835,
+      "frame_on_glass_interval_ms_mean": 5.618680945762401
+    },
+    {
+      "start_utc": "2026-10-05T18:03:58.964Z",
+      "end_utc": "2026-10-05T18:03:59.964Z",
+      "fps": 168.00008010868078,
+      "frame_count": 168,
+      "gpu_active_ms_mean": 5.15041155357143,
+      "cpu_end_to_end_latency_ms_mean": 9.76543663134743,
+      "frame_on_glass_interval_ms_mean": 5.925823412586136
+    },
+    {
+      "start_utc": "2026-10-05T18:03:59.964Z",
+      "end_utc": "2026-10-05T18:04:00.964Z",
+      "fps": 157.9924474988643,
+      "frame_count": 158,
+      "gpu_active_ms_mean": 5.661684765822783,
+      "cpu_end_to_end_latency_ms_mean": 10.600763555988964,
+      "frame_on_glass_interval_ms_mean": 6.30615374476419
+    },
+    {
+      "start_utc": "2026-10-05T18:04:00.964Z",
+      "end_utc": "2026-10-05T18:04:01.964Z",
+      "fps": 75.00055879770814,
+      "frame_count": 75,
+      "gpu_active_ms_mean": 5.89259476,
+      "cpu_end_to_end_latency_ms_mean": 16.807019322489698,
+      "frame_on_glass_interval_ms_mean": 12.957252777802449
+    },
+    {
+      "start_utc": "2026-10-05T18:04:01.964Z",
+      "end_utc": "2026-10-05T18:04:02.964Z",
+      "fps": 15.000331707183323,
+      "frame_count": 15,
+      "gpu_active_ms_mean": 4.7743698,
+      "cpu_end_to_end_latency_ms_mean": 59.26215321524069,
+      "frame_on_glass_interval_ms_mean": 68.61162499990314
+    },
+    {
+      "start_utc": "2026-10-05T18:04:02.964Z",
+      "end_utc": "2026-10-05T18:04:03.960Z",
+      "fps": 27.09749286558344,
+      "frame_count": 27,
+      "gpu_active_ms_mean": 4.902637518518519,
+      "cpu_end_to_end_latency_ms_mean": 35.29600341183444,
+      "frame_on_glass_interval_ms_mean": 34.878810185344065
+    },
+    {
+      "start_utc": "2026-10-05T18:04:03.960Z",
+      "end_utc": "2026-10-05T18:04:04.964Z",
+      "fps": 51.81450540877213,
+      "frame_count": 52,
+      "gpu_active_ms_mean": 4.399887057692308,
+      "cpu_end_to_end_latency_ms_mean": 23.05827597872569,
+      "frame_on_glass_interval_ms_mean": 20.464229166883833
+    },
+    {
+      "start_utc": "2026-10-05T18:04:04.964Z",
+      "end_utc": "2026-10-05T18:04:05.964Z",
+      "fps": 31.000345531977086,
+      "frame_count": 31,
+      "gpu_active_ms_mean": 4.342872354838711,
+      "cpu_end_to_end_latency_ms_mean": 34.32105552506513,
+      "frame_on_glass_interval_ms_mean": 32.21731989235137
+    },
+    {
+      "start_utc": "2026-10-05T18:04:05.964Z",
+      "end_utc": "2026-10-05T18:04:06.964Z",
+      "fps": 59.00057674018058,
+      "frame_count": 59,
+      "gpu_active_ms_mean": 4.6058046610169505,
+      "cpu_end_to_end_latency_ms_mean": 19.709863323102688,
+      "frame_on_glass_interval_ms_mean": 16.912124293828697
+    },
+    {
+      "start_utc": "2026-10-05T18:04:06.964Z",
+      "end_utc": "2026-10-05T18:04:07.964Z",
+      "fps": 85.99992823606757,
+      "frame_count": 86,
+      "gpu_active_ms_mean": 4.705131244186048,
+      "cpu_end_to_end_latency_ms_mean": 14.344187402288256,
+      "frame_on_glass_interval_ms_mean": 11.660539728540625
+    },
+    {
+      "start_utc": "2026-10-05T18:04:07.964Z",
+      "end_utc": "2026-10-05T18:04:08.964Z",
+      "fps": 66.99952078208364,
+      "frame_count": 67,
+      "gpu_active_ms_mean": 4.940733119402986,
+      "cpu_end_to_end_latency_ms_mean": 17.32186477287297,
+      "frame_on_glass_interval_ms_mean": 14.912460820745927
+    },
+    {
+      "start_utc": "2026-10-05T18:04:08.964Z",
+      "end_utc": "2026-10-05T18:04:09.964Z",
+      "fps": 66.99972045538236,
+      "frame_count": 67,
+      "gpu_active_ms_mean": 4.920090164179105,
+      "cpu_end_to_end_latency_ms_mean": 17.43628952909372,
+      "frame_on_glass_interval_ms_mean": 14.884542288960638
+    },
+    {
+      "start_utc": "2026-10-05T18:04:09.964Z",
+      "end_utc": "2026-10-05T18:04:10.964Z",
+      "fps": 58.00050127939495,
+      "frame_count": 58,
+      "gpu_active_ms_mean": 4.743743810344827,
+      "cpu_end_to_end_latency_ms_mean": 19.544802107828158,
+      "frame_on_glass_interval_ms_mean": 17.182308189462514
+    },
+    {
+      "start_utc": "2026-10-05T18:04:10.964Z",
+      "end_utc": "2026-10-05T18:04:11.960Z",
+      "fps": 31.113642986330948,
+      "frame_count": 31,
+      "gpu_active_ms_mean": 4.776212258064516,
+      "cpu_end_to_end_latency_ms_mean": 29.67066163264756,
+      "frame_on_glass_interval_ms_mean": 28.13291128991442
+    }
+  ]
+}
