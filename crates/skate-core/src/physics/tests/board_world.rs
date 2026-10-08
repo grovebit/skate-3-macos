@@ -222,6 +222,37 @@ fn host_geometry_rejects_degenerate_triangles() {
 }
 
 #[test]
+fn empty_volume_query_matches_a_full_walk_that_finds_nothing() {
+    // An unindexed world walks every triangle for any volume, so a distant
+    // sphere runs the whole walk and adds nothing. The early return for an
+    // empty volume list must leave the same result and buffer state, also
+    // after a query that published, flushed and dropped contacts.
+    let config = config();
+    let sphere = |y| BoardWorldVolume {
+        body: CollisionBody::Attached(0),
+        primitive: ContactPrimitive::Sphere(Sphere {
+            center: Vector3::new(0.0, y, 0.0),
+            radius: RETAIL_WHEEL_RADIUS,
+        }),
+        linear_velocity: Vector3::new(0.0, -1.0, 0.0),
+        material: material(0.0, 0.0, 0.0),
+    };
+    let used = || {
+        let mut world = BoardWorld::new(vec![triangle(); 8]);
+        let near = [sphere(RETAIL_WHEEL_RADIUS)];
+        assert_eq!(world.query_primitives(&near, config.query, config.retention).len(), 1);
+        assert_eq!(world.dropped_contacts(), 7);
+        world
+    };
+    let (mut early, mut walked) = (used(), used());
+    assert!(early.query_primitives(&[], config.query, config.retention).is_empty());
+    let far = [sphere(1000.0)];
+    assert!(walked.query_primitives(&far, config.query, config.retention).is_empty());
+    assert_eq!(format!("{:?}", early.buffer), format!("{:?}", walked.buffer));
+    assert_eq!(early.dropped_contacts(), 0);
+}
+
+#[test]
 fn attached_volume_contact_reaches_its_actual_solver_body() {
     use crate::physics::board_step::AttachedStep;
     let mut board = board(0.0, Vector3::ZERO);

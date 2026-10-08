@@ -389,3 +389,36 @@ fn private_extracted_map_supports_production_gameplay_startup() {
     );
     gameplay.run_supported_startup(&graphs, &map);
 }
+
+/// Times the board's world query with every board volume disabled, as in
+/// possession states 3 and 4 (hidden or returning board). The solve issues it
+/// once per fixed tick. Needs only the map; reports, never asserts, the cost.
+#[test]
+#[ignore = "requires SKATE_MAP_TEST_PATH pointing to a private extracted .skate map; CPU timing"]
+fn hidden_board_world_query_cost() {
+    let path = std::env::var_os("SKATE_MAP_TEST_PATH")
+        .map(PathBuf::from)
+        .expect("set SKATE_MAP_TEST_PATH to the extracted .skate package");
+    let map = SkateMap::load(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    // The material only reaches contacts, and this query has no volumes.
+    let material = skate_core::physics::contact::RetailContactMaterial {
+        static_friction: 0.0,
+        dynamic_friction: 0.0,
+        restitution: 0.0,
+    };
+    let mut world = crate::world::skate_world::collision_world(&map, material).unwrap();
+    let (query, retention) = ground::query_settings();
+    let none: &[skate_core::physics::board_world::BoardWorldVolume] = &[];
+    const QUERIES: u32 = 600;
+    let started = std::time::Instant::now();
+    for _ in 0..QUERIES {
+        assert!(world.query_primitives(std::hint::black_box(none), query, retention).is_empty());
+    }
+    let elapsed = started.elapsed();
+    eprintln!(
+        "SKATE_HIDDEN_BOARD_QUERY map={} triangles={} queries={QUERIES} us_per_query={:.2}",
+        path.file_stem().unwrap_or_default().to_string_lossy(),
+        world.triangles().len(),
+        elapsed.as_secs_f64() * 1.0e6 / f64::from(QUERIES)
+    );
+}
