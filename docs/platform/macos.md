@@ -7,8 +7,11 @@ data is prepared. It has no packaged release.
 
 ## Requirements
 
-- An Apple Silicon Mac. `play.sh` asks to install the rest: the Xcode Command
-  Line Tools, Rust through rustup, and uv (which provides Python 3.13).
+- An Apple Silicon Mac. `play.sh` asks to install the Xcode Command Line Tools
+  and rustup, then fetches the rest at pinned versions, so every Mac builds and
+  converts with the same tools: Rust from `rust-toolchain.toml`, and through
+  `tools/pinned_tool.sh` uv, Python (`.python-version`), the hash-locked Python
+  packages and vgmstream.
 - Your own copy of Skate 3 for **Xbox 360**: its `.iso` disc image or an
   extracted game folder containing `default.xex` and `data/`. The PS3 version
   cannot be converted.
@@ -57,13 +60,17 @@ change. It needs no game data.
 
 ## Original skating audio
 
-When [vgmstream](https://github.com/vgmstream/vgmstream) is installed
-(`play.sh` offers `brew install vgmstream`), setup also decodes eight original
-sound banks into `.local/skating-audio`, once. If you add vgmstream later, run
+Setup also decodes eight original sound banks into `.local/skating-audio`,
+once, with [vgmstream](https://github.com/vgmstream/vgmstream) r2117 and a
+static FFmpeg 9.0.2. `tools/pinned_tool.sh vgmstream` builds them from
+checksummed sources with the Xcode Command Line Tools, in about 40 seconds on
+an M3 Max, so every Mac decodes the same samples without Homebrew. If your
+library is missing because an earlier setup skipped it, run
 `./play.sh "/path/to/Skate 3"` again. To prepare or audition the library by hand:
 
 ```sh
-python3 -m tools.audio.prepare_skating_audio "/path/to/Skate 3"
+tools/pinned_tool.sh vgmstream
+.local/venv-setup/bin/python -m tools.audio.prepare_skating_audio "/path/to/Skate 3"
 open .local/skating-audio/index.html
 ```
 
@@ -107,8 +114,8 @@ mix (default `0.45`). These settings affect skating sounds, not mod audio.
 For material-specific impacts, also run:
 
 ```sh
-pip install xex2
-python3 -m tools.audio.prepare_impact_audio "/path/to/Skate 3"
+tools/pinned_tool.sh vgmstream
+.local/venv-setup/bin/python -m tools.audio.prepare_impact_audio "/path/to/Skate 3"
 ```
 
 This writes `material-impacts/` inside the local audio library. The tested disc
@@ -141,7 +148,7 @@ collisions.json`. The exporter does not overwrite an existing folder, so
 refresh a library by exporting beside it and swapping the folders:
 
 ```sh
-python3 -m tools.audio.prepare_impact_audio "/path/to/Skate 3" \
+.local/venv-setup/bin/python -m tools.audio.prepare_impact_audio "/path/to/Skate 3" \
     --output .local/skating-audio/material-impacts.new
 mv .local/skating-audio/material-impacts .local/skating-audio/material-impacts.old
 mv .local/skating-audio/material-impacts.new .local/skating-audio/material-impacts

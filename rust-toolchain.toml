@@ -1,0 +1,4 @@
+# Every build uses this compiler; rustup installs it on first use.
+[toolchain]
+channel = "1.98.0"
+profile = "minimal"

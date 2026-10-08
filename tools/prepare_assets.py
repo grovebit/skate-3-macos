@@ -3,7 +3,7 @@ folder or its .iso disc image. An existing installation is refreshed: only
 asset groups whose pipeline changed are rebuilt, and player settings are kept.
 """
 from pathlib import Path
-import argparse,shutil,subprocess,sys
+import argparse,subprocess,sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tools import xiso
 from tools.asset_pipeline.customiser_setup import install
@@ -22,13 +22,12 @@ def prepare(game,selected,output,game_exe,audio,report):
         raise RuntimeError('Map archives use unexpected casing; expected data/content/worldDIST_<Name>.big')
     stage=install(game,output,game_exe,report,refresh=installed(output) is not None,selected=selected)
     if audio and not audio.exists():
-        decoder=shutil.which('vgmstream-cli')
-        if decoder is None:
-            report('Skipping the original skating sounds: they need vgmstream (brew install vgmstream)')
+        from tools.audio.prepare_skating_audio import DECODER,MISSING_DECODER,prepare as prepare_audio
+        if not DECODER.is_file():
+            report(f'Skipping the original skating sounds: {MISSING_DECODER}')
         else:
-            from tools.audio.prepare_skating_audio import prepare as prepare_audio
             try:
-                prepare_audio(game,audio,decoder)
+                prepare_audio(game,audio,str(DECODER))
             except (OSError,RuntimeError,ValueError,KeyError,subprocess.TimeoutExpired) as error:
                 report(f'The original skating sounds could not be prepared: {error}')
     return stage

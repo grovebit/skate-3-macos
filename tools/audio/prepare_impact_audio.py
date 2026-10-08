@@ -16,7 +16,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import tempfile
 
 from tools.asset_pipeline.setup_state import source_directory
@@ -31,7 +30,7 @@ from tools.owned_game.body_controls import body_controls
 from tools.owned_game.audio_surface import surface_classes
 from tools.owned_game.collision_materials import BANKS, body_settings, collision_materials
 from tools.owned_game import collision_mix
-from tools.audio.prepare_skating_audio import decoder_info, validate_wav
+from tools.audio.prepare_skating_audio import DECODER, MISSING_DECODER, decoder_info, validate_wav
 
 # Collision-tag audio surface enum, also used by the owned-world material editor.
 SURFACES = '''undefined asphalt_smooth asphalt_rough concrete_polished concrete_rough
@@ -242,13 +241,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('game', type=Path)
     parser.add_argument('--output', type=Path, default=Path('.local/skating-audio/material-impacts'))
-    parser.add_argument('--decoder', default='vgmstream-cli')
+    parser.add_argument('--decoder', type=Path, default=DECODER)
     args = parser.parse_args()
-    decoder = shutil.which(args.decoder)
-    if decoder is None:
-        parser.exit(1, 'vgmstream-cli is required\n')
+    if not args.decoder.is_file():
+        parser.exit(1, MISSING_DECODER + '\n')
     try:
-        manifest = prepare(args.game, args.output, decoder)
+        manifest = prepare(args.game, args.output, str(args.decoder))
     except (ValueError, OSError, RuntimeError) as error:
         parser.exit(1, f'{error}\n')
     print(f'Prepared {len(manifest["surfaces"])} material routes and {len(manifest["rendered"])} impact variants from {len(manifest["decoded"])} original clips')

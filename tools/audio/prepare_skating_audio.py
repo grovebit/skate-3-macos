@@ -1,7 +1,7 @@
 """Decode owned skating sound banks into a local audition library.
 
-Run: python3 -m tools.audio.prepare_skating_audio '/path/to/Skate 3'
-Requires vgmstream-cli (on macOS: brew install vgmstream).
+Run: .local/venv-setup/bin/python -m tools.audio.prepare_skating_audio '/path/to/Skate 3'
+Decodes with the pinned vgmstream-cli that `tools/pinned_tool.sh vgmstream` builds.
 """
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import html
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 import wave
@@ -21,6 +20,9 @@ from tools.owned_game.big import BigArchive
 from tools.owned_game.splc import streams as splc_streams
 from tools.asset_pipeline.setup_state import source_directory
 
+
+DECODER = Path(__file__).resolve().parents[2] / '.local/tools/vgmstream/vgmstream-cli'
+MISSING_DECODER = 'vgmstream-cli is missing; build it with tools/pinned_tool.sh vgmstream'
 
 # ABK banks decode directly; the collision bank embeds SNR streams in SPLC.
 BANKS = (
@@ -160,13 +162,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('game', type=Path)
     parser.add_argument('--output', type=Path, default=Path('.local/skating-audio'))
-    parser.add_argument('--decoder', default='vgmstream-cli')
+    parser.add_argument('--decoder', type=Path, default=DECODER)
     args = parser.parse_args(argv)
-    decoder = shutil.which(args.decoder)
-    if decoder is None:
-        parser.exit(1, 'vgmstream-cli not found. On macOS install it with: brew install vgmstream\n')
+    if not args.decoder.is_file():
+        parser.exit(1, MISSING_DECODER + '\n')
     try:
-        manifest = prepare(args.game, args.output, decoder)
+        manifest = prepare(args.game, args.output, str(args.decoder))
     except (OSError, RuntimeError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
         parser.exit(1, f'Audio preparation failed: {error}\n')
     print(f"Decoded {len(manifest['clips'])} clips. Open {args.output.resolve() / 'index.html'}")

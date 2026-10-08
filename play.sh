@@ -5,17 +5,17 @@
 #   ./play.sh "/path/to/Skate 3.iso"   set up from a game folder or .iso, then play
 #   ./play.sh --map path/to/map.skate  options are passed to the game
 #
-# The first run checks for the tools it needs (offering to install Rust and
-# uv), converts the game into data/ and builds the engine. Later runs rebuild
+# The first run offers to install rustup if it is missing, fetches the other
+# tools, converts the game into data/ and builds the engine. Later runs rebuild
 # what changed, refresh data/ when its conversion changed, and start the game.
+# Every Mac gets the same tools: rust-toolchain.toml pins Rust, and
+# tools/pinned_tool.sh pins uv, Python, its packages and vgmstream.
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")" && pwd)
 cd "$repo"
-venv=.local/venv-setup
 audio=.local/skating-audio
 exe=${CARGO_TARGET_DIR:-target}/debug/skate3rust
-rust_minimum=1.90 # newest rust-version among the locked dependencies
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 fail() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
@@ -60,32 +60,17 @@ if ! xcode-select -p >/dev/null 2>&1; then
     fail "Install the Xcode Command Line Tools in the window that opened, then run ./play.sh again."
 fi
 
-export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
-if ! command -v cargo >/dev/null; then
-    confirm "Rust is not installed. Install it now with rustup, Rust's official installer?" ||
-        fail "Install Rust from https://rustup.rs, then run ./play.sh again."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-fi
-if ! printf '%s\n' "$rust_minimum" "$(rustc --version | cut -d' ' -f2)" | sort -V -C; then
-    command -v rustup >/dev/null && confirm "Rust $rust_minimum or newer is needed. Update it now?" ||
-        fail "Update Rust to $rust_minimum or newer, then run ./play.sh again."
-    rustup update stable
+# rustup installs the Rust version of rust-toolchain.toml when cargo first runs.
+export PATH="$HOME/.cargo/bin:$PATH"
+if ! command -v rustup >/dev/null; then
+    confirm "Building the game needs rustup, Rust's official installer. Install it now?" ||
+        fail "Install Rust with rustup (https://rustup.rs), then run ./play.sh again."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+        sh -s -- -y --profile minimal --default-toolchain none
 fi
 
-# numpy's pinned release has no wheels after Python 3.13.
-if ! command -v uv >/dev/null && ! command -v python3.13 >/dev/null; then
-    confirm "Converting the game needs Python 3.13. Install uv, which provides it?" ||
-        fail "Install uv (https://docs.astral.sh/uv/) or Python 3.13, then run ./play.sh again."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-fi
-if command -v uv >/dev/null; then
-    [ -x "$venv/bin/python" ] || uv venv --quiet --python 3.13 "$venv"
-    uv pip install --quiet --python "$venv/bin/python" -r tools/requirements-setup.txt
-else
-    [ -x "$venv/bin/python" ] || python3.13 -m venv "$venv"
-    "$venv/bin/pip" install --quiet -r tools/requirements-setup.txt
-fi
-python() { PYTHONDONTWRITEBYTECODE=1 "$venv/bin/python" "$@"; }
+setup_python=$(tools/pinned_tool.sh python)
+python() { PYTHONDONTWRITEBYTECODE=1 "$setup_python" "$@"; }
 
 state=$(python -m tools.asset_pipeline.versions --status data)
 if [ -z "$game" ] && [ "$state" != current ]; then
@@ -99,10 +84,6 @@ if [ -z "$game" ] && [ "$state" != current ]; then
 fi
 [ -z "$game" ] || [ -e "$game" ] || fail "Not found: $game"
 
-if [ -n "$game" ] && [ ! -d "$audio" ] && ! command -v vgmstream-cli >/dev/null && command -v brew >/dev/null; then
-    if confirm "Install vgmstream with Homebrew for the original skating sounds?"; then brew install vgmstream; fi
-fi
-
 step "Building the game"
 [ -x "$exe" ] || echo "The first build compiles the engine and its libraries; it takes several minutes."
 cargo build --locked -p skate-game --bin skate3rust
@@ -110,6 +91,8 @@ cargo build --locked -p skate-game --bin skate3rust
 if [ -n "$game" ]; then
     step "Converting your copy of Skate 3"
     echo "This takes a few minutes. Later runs only redo what changes."
+    # Setup decodes the original skating sounds once, with the pinned vgmstream.
+    [ -d "$audio" ] || tools/pinned_tool.sh vgmstream >/dev/null
     mkdir -p target/native
     rustc --edition 2024 --crate-type cdylib -C opt-level=3 -C panic=abort \
         tools/asset_pipeline/refpack_native.rs -o target/native/librefpack.dylib
