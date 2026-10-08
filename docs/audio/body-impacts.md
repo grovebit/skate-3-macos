@@ -77,6 +77,9 @@ of the eight strengths. Material tags remain from the current publication,
 even when its strength comes from an older peak. The filtered block flows from
 publication table member `+28`, offset `+5C`, through packet `+140`
 (`8277EDB4..8277EDD4`) into audio snapshot `+1F0` (`8249F178..8249F198`).
+The snapshot publisher then multiplies all eight strengths by a speed graph,
+up to ×5 and without a clamp, before Contacts reads them
+([PlayerPhysics speed graph](#playerphysics-speed-graph-on-body-strengths)).
 The body selector consumes the first six regions; the two foot regions have
 separate consumers. The history advances per physics publication, not by an
 assumed wall-clock duration. Original owner reset/teleport semantics remain
@@ -817,6 +820,123 @@ physics-publication strengths remain diagnostic inputs until the full event
 scheduler and voice controls are connected. This mismatch is still open;
 this trace identifies a concrete producer dependency for replacing it.
 
+## PlayerPhysics speed graph on body strengths
+
+The body loop does not read the published contact strengths directly. The
+snapshot publisher first multiplies all eight by a graph of the skater's
+centre-of-mass speed, so the classifier sees up to five times the published
+value. Addresses are base-disc `default.xex` SHA-256
+`1db39496585c521d17a2137804f42cf73ebed2b32cac166ec42dbf772f4dcf7f` (mapped
+image `default.pe` SHA-256
+`ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42`).
+
+Traced code:
+
+- The snapshot is the Player group's `SFXCTL_PlayerPhysics` controller
+  (vtable `822F7CE4`, descriptor `82FD11D0`: family 1, ID 0), registered by
+  `8247AF00..8247AF04`. Group binding `828B7858` hands each object the
+  controllers it requests. Contacts (`822F71A8`) requests ID 0 (`824DEF58`)
+  and keeps it at Contacts `+20` (`824DDC88`). The body loop reads `+1F0`
+  through that pointer (`824AA1AC..824AA1B4`).
+- Group update `828B7C58` calls virtual `+24` and `+30` of each controller
+  on list `+20`, then of each object on list `+24`. The publication
+  (`822F7CE4 +24`, `8249ECA0`) therefore precedes Contacts
+  (`822F71A8 +24`, `824A60B0`) in the same input update.
+- `8249EE28..8249EE2C` stores the player record's `+6C` in snapshot `+D4`.
+  `8249F178..8249F198` copies the 0x74-byte block at record `+140` to `+1F0`;
+  nothing reads `+1F0..+20F` before the loop. `8249F794..8249F7CC` runs eight
+  times: it loads the strength at `+1F0 + 4i` and the float at `+D8`, calls
+  `8246FD40` with `r3 = 8`, `r4 = layout + 0x10` and `r5 = layout + 0x30`,
+  where layout is `[[[830734C4] +24] +4]`, and stores the `fmuls` product
+  (`8249F7C0`) back. Then `8249F7D0..8249F7D4` copies `+D4` to `+D8`.
+  The graph thus reads the previous publication's speed, and no clamp
+  follows the product. The strength producer clamps to [0, 1], so authored
+  bounds above 1, such as the bone and face bands' upper bound 1.25 and the
+  `aud_speech/default` head threshold 1.5, take effect only through this
+  scaling.
+- `[[830734C4] +24]` is the `aud_collisions/default` handle; the body loop's
+  cooldown lookup uses the same one. The layout's only field is
+  `Hash_8B164823E008749C`, a `Sk8::PointNegGraphData8` of 80 bytes at offset
+  0. This path does not read its four header words (0, 1, 1, 5); x and y
+  follow at `+10` and `+30`:
+
+  | Point | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | x, speed | 0 | 0.3664494 | 0.4478826 | 0.5211726 | 0.592834 | 0.7410426 | 0.863192 | 0.946254 |
+  | y, gain | 1 | 1.2 | 1.485714 | 1.914286 | 2.428571 | 3.6 | 4.571427 | 5 |
+
+- `8246FD40` is the shared point-graph evaluator. An input ordered below
+  x[0] returns y[0]. An input not below the last x, including an unordered
+  one, returns the last y. Otherwise the first x[i] above the input selects
+  the piece; a width that is not positive, or is unordered (`ble` at
+  `8246FDC4`), returns y[i], and `fmadds` interpolates otherwise.
+- The speed is packet `+6C`. Packet builder `8277E688` writes it at
+  `8277E898..8277E8F0` as the three-lane length of PhysOut_SystemReckoning
+  `+10` (`vmsum3fp`, `vrsqrtefp` with two Newton steps times the square, zero
+  for a zero square, sign cleared). `82BB96AC..82BB96BC` copies that vector
+  from skeleton `+3F30`, which `82BB18D8` sets each physics update to
+  (COM − previous COM) × the refined reciprocal of the step time. It is the
+  centre-of-mass velocity in world units per second. The channel-4 reader
+  copies `+6C` into the player record without blending
+  (`82781294..827812A0`).
+- Initializer `8249E968` zeroes `+D4` (`8249E998`) and `+D8` (`8249EA68`).
+  The constructor `8249E900` and PlayerPhysics reset `+2C` (`8249EC98`, a
+  branch to `8249E968`) run it. The Player group reset `824E6A78` reaches
+  the reset through base reset `828B7E60`. The group update `824E6998`
+  resets before publishing when the group's record index is out of range,
+  or when a non-local record (`+98` bit 31 clear) fails `824E6AE0`. After
+  updating, the Player manager `824DFB08` resets every active group when the
+  local record changes, and resets a group whose `+4C`/`+50` key no longer
+  matches its record. The first publication after a reset uses
+  graph(0) = 1.
+
+TU3 corroboration: upstream research on Title Update 3, through the
+skate3recomp recompilation, finds the same block, graph data, one-call lag
+and missing clamp. Its TU3 addresses are bridge `sub_824B0DA8`, evaluator
+`sub_82481E10`, record `[[0x830CFDA4] +36] +4` and speed writer
+`sub_827A1B78`. A recompilation hook measured the body classifier's input
+at 5.0 times the clamped region strength (median over 218 queries). That is
+TU3 evidence, not a base-disc trace.
+
+Implemented: the exporter writes the x and y arrays to `collisions.json`
+version 2 as `settings.speed_graph`. `audio::player_physics::PlayerPhysics`
+runs at the start of each Player input phase, before the body and deck
+loops: it evaluates `PointGraph` at the stored speed, multiplies all eight
+strengths and then stores the current speed. `com_speed` repeats the packet
+`+6C` length on `SkeletonBoardFrames::com_velocity`. `PointGraph` now also
+takes the unordered-width branch; its former `width <= 0.0` test missed it.
+The foot regions 6 and 7 are scaled too, but the port's feet still use host
+impulses, so nothing reads them. The `SKATE_AUDIO_BODY_TRACE` and
+bail-test traces record the unscaled strengths and `com_speed`.
+
+Verified by replay (local, not checked in):
+
+- `verify_speed_graph.py` ran `8246FD40` for 4,504 evaluations: the owned
+  graph and 80 synthetic graphs, with repeated and unordered keys, keys ±1
+  ulp, infinite and NaN inputs. All matched `PointGraph`; the former test
+  differed in 17 unordered-width cases. The owned graph gives 1.1364446 at
+  0.25, 1.7904768 at 0.5, 4.9999995 just below the last key and 5 from it.
+- The same script ran `8249EE28..8249EE2C`, the block copy with its native
+  `memcpy`, and the loop `8249F794..8249F7D4` for 3,000 publications with
+  63 native resets through `8249E968`. Every product and `+D4`/`+D8` matched
+  `PlayerPhysics::publish`; the block tail was copied unscaled.
+- `verify_bail_speed_graph.py` replayed both clock phases of the stock bail
+  trace (484 input updates each) through the native publication and
+  `824AA020`, and through the production Rust. Both gave the same 13 records
+  per phase. Without the graph the same inputs give 12. With it, in phase 0
+  a torso hit at tick 172 reaches category 2, adding a medium overlay, and a
+  leg hit rises from category 0 to 1. The bursts at ticks 166 and 172 read
+  the speeds of the preceding input updates, 1.75 and 1.84, above the last
+  key, so both scaled by 5; the hits at ticks 204 and 212 scaled by about
+  1.07 and 1.02.
+
+Provisional in the port: the speed comes from the current physics
+publication, not the selected channel-4 packet. `+D8` lasts as long as the
+host's body-audio state, because the host has no producer for the reset
+triggers above. Which gameplay events (respawn, map change, player
+selection) raise them is untraced. Not checked: a bail on a real map, by
+ear or against original-game traces.
+
 ## Runtime primary-body event bank
 
 The runtime now loads `body_events` and `surface_classes` from the exported
@@ -1001,23 +1121,33 @@ uses provisional full-scale volume output. (Since replaced; see
 
 The reuse reset resolves through group vtable `822F8030 +1C` to `824E6518`,
 which first invokes base reset `828B7E60`. That clears group `+1C` and active
-byte `+34`, then traverses the controller list at group `+24` in linked order.
-Each controller receives virtual `+2C`; the collision position-controller
-table `822F6B28 +2C` resolves to `8249CAC8`, clearing its position source
-`+20` and additional source `+1C`. For each controller, base reset then clears
-the linked output buffer's whole word `+3C` (not just its low bit) and zeroes
-the linked input buffer's full 64 bytes. Null bindings/buffers skip their
-respective stores.
+byte `+34`, then traverses the object list at group `+24` in linked order.
+Each object receives virtual `+2C`; collision voice `822F73A0 +2C` is
+`824A60A0`, a virtual `+20` dispatch to `824BFB80`, which clears voice record
+`+24` and releases its two playback channels. For each object, base reset then
+clears the linked output buffer's whole word `+3C` (not just its low bit) and
+zeroes the linked input buffer's full 64 bytes. Null bindings/buffers skip
+their respective stores.
 
-Next, the primary-object list at group `+20` receives virtual `+2C` and its
-input buffers are zeroed. This second traversal does not separately clear
-output flags. Collision voice `822F73A0 +2C` is `824A60A0`, a virtual `+20`
-dispatch to `824BFB80`; it clears voice record `+24` and releases its two
-playback channels. Finally `824E6518` frees and clears group record `+44`
-when present. The local verifier executed 200 resets through the actual
+Next, the controller list at group `+20` receives virtual `+2C` and its input
+buffers are zeroed. This second traversal does not clear output words. The
+collision position-controller table `822F6B28 +2C` resolves to `8249CAC8`,
+clearing its position source `+20` and additional source `+1C`. Finally
+`824E6518` frees and clears group record `+44` when present.
+
+Registration fixes the list membership. `8247ACC8` passes object descriptors,
+including the collision voice (`82FD13A0`) and Contacts (`82FD1310`), to
+`828B7020`, whose registry `828B7788` instantiates onto list `+24`. It passes
+controller descriptors, including 3DColPos (`82FD1240`) and PlayerPhysics
+(`82FD11D0`), to `828B6F48`, whose registry `828B7AD0` instantiates onto list
+`+20`. The local verifier executed 200 resets through the actual
 group/position/voice vtables with randomized buffer contents, verified both
-64-byte input clears, position-pointer resets and output disable, and used
-no hooks. Playback channels and the group's owned record were null in this
+64-byte input clears, position-pointer resets and output disable, and used no
+hooks. It placed the position controller on `+24` and the voice on `+20`, so
+its output-disable check exercised the position controller's binding; the
+voice's output clear rests on the disassembly. The port's reset clears the
+output word that the group's voices read, which matches the game's layout.
+Playback channels and the group's owned record were null in this
 verification; release/free internals remain outside that verified domain.
 All addresses use the base-disc hash recorded above.
 
@@ -1065,17 +1195,19 @@ section connects it to playback.
 
 When the impact library includes `collisions.json`, `skating_audio` plays head,
 torso, arm and leg impacts from the original body loop and clears the host
-impulse channels for those parts. Current exports also connect ordinary deck
+impulse channels for those parts. The same bank connects ordinary deck
 playback ([details](board-collisions.md#runtime-ordinary-deck-impact-playback)). Trucks and feet
-keep the provisional onset path, as do body contacts without this bank and
-deck contacts whose older bank lacks `settings.board_cooldown`.
+keep the provisional onset path, as do body and deck contacts when no bank
+loads. The runtime reads only `collisions.json` version 2, which adds the
+speed graph; an older export logs `invalid or outdated collisions.json`.
 
 After each fixed simulation tick, the manager clock (`audio::clock`) advances.
-On an input phase, the loop reads:
+On an input phase, the PlayerPhysics publication runs first, then the loop
+reads:
 
 | Snapshot input | Runtime source |
 | --- | --- |
-| `+1F0` strengths, `+230` tags | Regions 0..5 of the published body contact block (`8274FF60` four-publication maxima, current tags) |
+| `+1F0` strengths, `+230` tags | Regions 0..5 of the published body contact block (`8274FF60` four-publication maxima, current tags); the strengths times the [speed graph](#playerphysics-speed-graph-on-body-strengths) at the previous input phase's speed |
 | `+2A4` | Processed input `+2468` bit 18 |
 | `+251` | Current flag of the part-1 (face) specific contact |
 
@@ -1106,6 +1238,7 @@ These inputs have no ported producer and are provisional:
 | --- | --- | --- |
 | Manager clock delta | Fixed tick period, enabled, never forced. At 60 Hz the loop runs every second tick, so the 15-update cooldown lasts 0.5 s | Original measured loop and enable initialization traced; host packet-buffer adapter and force producer remain ([details](collision-pan.md#audio-manager-cadence-and-publication-timing)) |
 | Snapshot `+DC` | 1.0, the provider's constructed ratio | Exhaustive `+20` writer audit and selected channel-6 packet binding; skipped advances retain `+24` ([details](collision-pan.md#audio-manager-cadence-and-publication-timing)) |
+| Packet `+6C` speed, snapshot `+D8` | Length of the current physics publication's COM velocity; `+D8` starts at 0 and is never reset | Selected channel-4 packet binding; the gameplay events behind the Player group reset triggers ([details](#playerphysics-speed-graph-on-body-strengths)) |
 | Manager `+34B`, `824ADA78` | Off, so no Hall of Meat layer | Hall of Meat mode producer |
 | Channel-5 object (`+29CB4`) | Duration-gated Collision `+C4` strength now feeds word 8 and the torso edge layer ([details](collision-pan.md#channel-5-live-duration-publication)) | Material/tag State `+41/+45` routes and driver teleport-input mapping ([suppression audit](collision-pan.md#channel-5-suppression-writers)); selected packet index; section A is copied, not fraction-interpolated ([details](collision-pan.md#audio-manager-cadence-and-publication-timing)) |
 | Contacts `+1C` owner | Byte 0, word nonzero | Owner object binding |
@@ -1125,8 +1258,8 @@ Host adaptations, which make no parity claim:
   overrides are not applied.
 - Pause, replay, map loading, teleports, mod vehicles and mute stop collision
   voices and clear queued records and groups. They keep the body timers, which
-  only constructor `824A5B70` resets. Whether a map load reconstructs the
-  Contacts object is untraced.
+  only constructor `824A5B70` resets, and PlayerPhysics `+D8`. Whether a map
+  load reconstructs the Contacts or PlayerPhysics object is untraced.
 
 The empty material `0x5E` (tag `0x5F`) is not reproduced. The native
 classifier does not fail on it: the missing database row leaves the handle on
@@ -1139,8 +1272,9 @@ Validation:
 
 - Rust tests cover group allocation, stealing and release, and side
   resolution with counterpart classes. An opt-in test loads the owned export,
-  resolves all 280 events, and checks that every audible side of the records
-  generated for each tag at five strengths has a clip:
+  resolves all 280 events, checks the speed graph, and checks that every
+  audible side of the records generated for each tag at seven strengths, up
+  to the graph's 5, has a clip:
 
   ```sh
   SKATE_OWNED_AUDIO_ROOT="$PWD/.local/collision-export-validation" \
@@ -1155,14 +1289,18 @@ Validation:
     cargo test -p skate-game raw_controller_bail_runs_stock_wipeout_for_900_ticks -- --include-ignored
   ```
 
-  The local `verify_body_bail.py` replays both clock phases of that trace
-  (484 input updates each) through native `824AA020` and the production Rust.
-  In each phase, both produced the same 12 records. Leg, arm and torso
-  primaries, with denim, skin and cotton layers, fall between ticks 166 and 212;
-  state 300 began at tick 67. The test ground's tag 0 selects the absent
-  surface, so only body sides sound there.
+  The trace holds the strengths before the speed graph and packet `+6C`
+  (`com_speed`). The local `verify_bail_speed_graph.py` replays both clock
+  phases of that trace (484 input updates each) through the native
+  publication and `824AA020`, and through the production Rust. In each phase,
+  both produced the same 13 records; without the graph, as in the earlier
+  `verify_body_bail.py`, they produce 12. Leg, arm and torso primaries, with
+  denim, skin and cotton layers, fall between ticks 166 and 212; state 300
+  began at tick 67. The test ground's tag 0 selects the absent surface, so
+  only body sides sound there.
 - With the export installed, `./play.sh --verify shot.png` logs
-  `original collision bank loaded with 280 events` and passes.
+  `original collision bank loaded with 280 events; body speed graph x1 at 0
+  to x5 from 0.946254` and passes.
 
 Not yet checked: a bail on a real map, by ear and against the
 `SKATE_AUDIO_BODY_RECORD` log. The silent-bail report stays open until then.

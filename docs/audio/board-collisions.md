@@ -293,16 +293,19 @@ it is assigned and decremented in the same input-family update, with the
 original `min(publication_ratio, 1)` boundary and no zero clamp.
 
 The exporter now includes `settings.board_cooldown`, read as Int32 from
-`aud_collisions/default` `Hash_27D3C5DC3282B59D` (6). Existing libraries
-without that field retain the provisional deck onset path. The installed
+`aud_collisions/default` `Hash_27D3C5DC3282B59D` (6). The runtime requires
+the field; `collisions.json` version 2, which adds the body speed graph,
+replaced the provisional deck path for exports without it. The installed
 local manifest was refreshed from the verified owned collections after
 matching its five database source hashes; its previous metadata is retained
 as `collisions.pre-deck-cooldown.json`.
 
 On Contacts input phases, runtime updates the body loop then the deck loop,
 matching `824A60B0` ordering, and shares the collision groups/consumer. Only
-deck reports are removed from the provisional observer when this bank field
-is present; truck, foot and independent wheel behavior stays available.
+deck reports are removed from the provisional observer when the bank loads;
+truck, foot and independent wheel behavior stays available. The
+PlayerPhysics speed graph scales only the body block at `+1F0..+20F`; the
+deck loop reads its strength from `+29C` (`824AAEBC`), which stays unscaled.
 Playback logs deck records as `SKATE_AUDIO_DECK_RECORD`.
 
 Local `verify_deck_impact.py` executes the original deck routine and material

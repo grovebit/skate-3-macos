@@ -15,6 +15,7 @@ pub mod modulation;
 pub mod output;
 pub mod pitch;
 pub mod pan;
+pub mod player_physics;
 pub mod scalar;
 pub mod voice;
 

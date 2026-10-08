@@ -66,12 +66,16 @@ pub(super) fn trace_body_audio(
     if !*ENABLED.get_or_init(|| std::env::var_os("SKATE_AUDIO_BODY_TRACE").is_some()) {
         return;
     }
+    // The physics publication (packet +140) before the PlayerPhysics speed
+    // graph; `body_layers` classifies these unscaled strengths. `com_speed`
+    // is the packet +6C the graph reads one audio publication later.
     let audio = &skater.collision_feedback.audio;
     let body_layers = materials
         .and_then(|bank| bank.body_levels(std::array::from_fn(|i| audio.published[i].intensity)));
     let body_events = materials.zip(body_layers).and_then(|(bank, layers)| {
         bank.body_event_layers(layers, std::array::from_fn(|i| audio.published[i].material))
     });
+    let velocity = skater.player_input.physical.reckoning.vector_16;
     bevy::log::info!(
         body_event_candidates = ?body_events,
         requested_simulation_timestep = physics.requested_simulation_timestep(),
@@ -80,6 +84,7 @@ pub(super) fn trace_body_audio(
         current = ?audio.current.map(|contact| contact.intensity),
         published = ?audio.published.map(|contact| contact.intensity),
         materials = ?audio.published.map(|contact| contact.material),
+        com_speed = skate_core::audio::player_physics::com_speed(velocity.map(f32::from_bits)),
         host_impulses = ?contacts.map(|contact| contact.strength),
         "SKATE_AUDIO_BODY_INPUT"
     );

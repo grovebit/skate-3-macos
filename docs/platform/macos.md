@@ -86,9 +86,10 @@ support contacts do not hide eligible board impacts. Board and each body family
 keep separate onset histories; at most two new families sound per simulation tick.
 Thresholds and gain remain provisional host tuning.
 With an impact library that includes `collisions.json` (below), head, torso,
-arm and leg impacts instead come from the original body loop; see
-[Runtime body-impact playback](../audio/body-impacts.md#runtime-body-impact-playback). Current exports
-also route deck contacts through the original deck loop; trucks and feet keep
+arm and leg impacts instead come from the original body loop, with the
+original speed graph on their strengths; see
+[Runtime body-impact playback](../audio/body-impacts.md#runtime-body-impact-playback). The same file
+also routes deck contacts through the original deck loop; trucks and feet keep
 the provisional onset path.
 Surface IDs and selected materials are logged as `SKATE_AUDIO_IMPACT`, and
 original body records as `SKATE_AUDIO_BODY_RECORD`, and deck records as
@@ -126,12 +127,25 @@ when preparing a different audio library.
 The same export writes `collisions.json` for the original body loop. It holds
 every audio material ID's bank, event matrix, base level, pitch and material
 class (table `82FD1930`, `82484410`, `82484638`), the intensity and volume
-profiles, the `aud_collisions/default` cooldown and bone/face bands, and one
-rendered route for each referenced bank event. The tested disc references 280
+profiles, the `aud_collisions/default` body and board cooldowns, bone/face
+bands and body speed graph, and one rendered route for each referenced bank
+event. The tested disc references 280
 events: 163 in `Skate_Collisions`, 110 in `Skate_Metal` and 7 in `HOM_Set_1`.
 Each manifest lists only its own clips, so `routes.json` stays within the
 runtime's 512 KiB limit. Without `collisions.json`, body contacts use the
 `routes.json` body-part samples as before.
+
+The runtime reads only `collisions.json` version 2, which added the speed
+graph. It treats an older file as absent and logs `invalid or outdated
+collisions.json`. The exporter does not overwrite an existing folder, so
+refresh a library by exporting beside it and swapping the folders:
+
+```sh
+python3 -m tools.audio.prepare_impact_audio "/path/to/Skate 3" \
+    --output .local/skating-audio/material-impacts.new
+mv .local/skating-audio/material-impacts .local/skating-audio/material-impacts.old
+mv .local/skating-audio/material-impacts.new .local/skating-audio/material-impacts
+```
 
 The export also writes `mixmap/`: the owned `data/audio/MixMapSK8.mxb`, the
 volume, log and curve tables from `default.xex`, and three `aud_general`
