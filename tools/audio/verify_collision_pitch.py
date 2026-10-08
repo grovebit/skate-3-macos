@@ -11,11 +11,11 @@ import random
 import shutil
 import struct
 import subprocess
-import sys
 import tempfile
 
-IMAGE_HASH = 'ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42'
-PROGRAM_HASH = '105f46bbc4ae25cf51bafc8524e00b0aef608a3aa91424e3d39bbc57fff305c2'
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine, f32_bits
+from tools.owned_game import collision_mix
 
 
 def check(actual, expected, context):
@@ -25,40 +25,17 @@ def check(actual, expected, context):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--analysis-dir', type=Path, required=True)
+    parser.add_argument('--game', type=Path, required=True,
+                        help='your Skate 3 folder, with default.xex')
     args = parser.parse_args()
-    here = args.analysis_dir.resolve()
-    check(hashlib.sha256((here / 'default.pe').read_bytes()).hexdigest(), IMAGE_HASH, 'image hash')
-    data = (here / 'MixMapSK8.mxb').read_bytes()
-    check(hashlib.sha256(data).hexdigest(), PROGRAM_HASH, 'program hash')
+    executable = xex_image.load(args.game)
+    data = (args.game / 'data/audio' / collision_mix.PROGRAM[0]).read_bytes()
+    check(hashlib.sha256(data).hexdigest(), collision_mix.PROGRAM[1], 'program hash')
+    tables = collision_mix.executable_tables((args.game / 'default.xex').read_bytes(),
+                                             lambda xex: executable)
     root = Path(__file__).resolve().parents[2]
-    sys.dont_write_bytecode = True
-    sys.path.insert(0, str(root))
-    sys.path.insert(0, str(here))
-    from ppc_interp import Machine, f32_bits
     word = lambda offset: struct.unpack_from('>I', data, offset)[0]
-    class PitchMachine(Machine):
-        def step(self, pc):
-            mnemonic, operands, _ = self.decode(pc)
-            if mnemonic == 'divwu':
-                self.set_gpr(operands[0], (self.gpr(operands[1]) & 0xffffffff) // (self.gpr(operands[2]) & 0xffffffff))
-                return pc + 4
-            if mnemonic == 'bdz':
-                self.ctr = (self.ctr - 1) & 0xffffffffffffffff
-                return int(operands[0], 0) if self.ctr == 0 else pc + 4
-            if mnemonic in ('slw', 'srw', 'sraw'):
-                value = self.gpr(operands[1]) & 0xffffffff
-                shift = self.gpr(operands[2]) & 63
-                if mnemonic == 'sraw':
-                    signed = self.s32(value)
-                    result = signed >> shift
-                    self.ca = int(signed < 0 and (value & ((1 << shift) - 1)) != 0)
-                else:
-                    result = (value << shift if mnemonic == 'slw' else value >> shift) if shift < 32 else 0
-                self.set_gpr(operands[0], result & 0xffffffff)
-                return pc + 4
-            return super().step(pc)
-    m = PitchMachine()
+    m = Machine(executable)
     cursor = 0x100000
 
     def alloc(size):
@@ -127,7 +104,7 @@ def main():
         pending.extend(ref & 255 for ref in [source, *gates] if ref >> 29 == 0)
     check(sorted(selected), [6, 7, 8, 52, 53, 113], 'pitch declaration cone')
     scalars = {}
-    volume = struct.unpack('>602i', (here / 'mixmap-volume-table.bin').read_bytes())
+    volume = struct.unpack('>602i', tables['volume'])
     for index in sorted(selected):
         at, source, descriptor, gates = declarations[index]
         pair, meta, run, curve, refs, authored = [alloc(n) for n in [8, 16, 12, 16, 4 * len(gates), 8]]
@@ -170,8 +147,8 @@ fn main() {
  let dir=std::path::PathBuf::from(std::env::args().nth(1).unwrap());
  let read=|name| std::fs::read(dir.join(name)).unwrap();
  let data=read("MixMapSK8.mxb");
- let tables=ScalarTables::from_be_bytes(&read("mixmap-log-table.bin"),&read("mixmap-volume-table.bin")).unwrap();
- let curves=CurveTable::from_be_bytes(&read("mixmap-curve-table.bin")).unwrap();
+ let tables=ScalarTables::from_be_bytes(&read("log.bin"),&read("volume.bin")).unwrap();
+ let curves=CurveTable::from_be_bytes(&read("curve.bin")).unwrap();
  let pitch=PitchTables::from_be_bytes(&read("pitch_semitones.bin"),&read("pitch_cents.bin")).unwrap();
  let mut counts=vec![0;14];counts[0]=1;counts[1]=2;counts[3]=10;
  let mut mix=CollisionMix::from_mxb(&data,&counts,&tables).unwrap();
@@ -268,10 +245,13 @@ fn main() {
         fixtures.append(' '.join(map(str,row)))
         expected.append(result)
     with tempfile.TemporaryDirectory(prefix='collision-pitch-') as temp:
-        rust,binary=Path(temp)/'main.rs',Path(temp)/'verify'
+        temp=Path(temp)
+        (temp/collision_mix.PROGRAM[0]).write_bytes(data)
+        for name,blob in tables.items():(temp/f'{name}.bin').write_bytes(blob)
+        rust,binary=temp/'main.rs',temp/'verify'
         rust.write_text(harness)
         subprocess.run([shutil.which('rustc'),'--edition=2024','-O',str(rust),'--extern',f'skate_core={target}/debug/libskate_core.rlib','-L',f'dependency={target}/debug/deps','-o',str(binary)],check=True)
-        output=subprocess.run([str(binary),str(here)],input='\n'.join(fixtures)+'\n',text=True,capture_output=True,check=True)
+        output=subprocess.run([str(binary),str(temp)],input='\n'.join(fixtures)+'\n',text=True,capture_output=True,check=True)
     actual=[list(map(int,line.split())) for line in output.stdout.splitlines()]
     check(len(actual),len(expected),'frame count')
     for frame,(a,e) in enumerate(zip(actual,expected)):check(a,e,f'frame {frame}')

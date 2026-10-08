@@ -1,19 +1,20 @@
 """Replay the owned manager clock against production Rust and timing research.
 
 The provider, upstream clamp and stamp checks are native-only research checks,
-not a port of the publication adapter. Requires local ppc_interp.py and the
-mapped base-disc default.pe; embeds no executable bytes.
+not a port of the publication adapter. Replays the owned instructions from
+your own default.xex; embeds no executable bytes.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import random
 import shutil
 import struct
 import subprocess
-import sys
 import tempfile
+
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def check(condition, message):
@@ -29,7 +30,7 @@ def float32(value):
     return struct.unpack(">f", struct.pack(">f", value))[0]
 
 
-def verify_clock(Machine, rustc):
+def verify_clock(image, rustc):
     source = Path(__file__).resolve().parents[2] / "crates/skate-core/src/audio/clock.rs"
     rng = random.Random(0x82473060)
     rows = [(float32(1 / 60), True, False)] * 60
@@ -39,7 +40,7 @@ def verify_clock(Machine, rustc):
     rows += [(float32(rng.choice([0.0, -0.0, 1 / 60, 0.005, 0.02,
                                  0.020000001, 0.03, rng.uniform(0, 0.05)])),
               rng.randrange(6) != 0, rng.randrange(7) == 0) for _ in range(2000)]
-    m = Machine()
+    m = Machine(image)
     manager = 0x100000
     m.writable = [(manager, manager + 0x1000)]
     # Disabled exit is outside the scheduling block, before any consumers.
@@ -85,13 +86,13 @@ fn main() {
     print(f"{len(rows)} native/Rust clock cases passed (60 Hz, variable, disabled, forced, threshold)")
 
 
-def verify_research(Machine):
+def verify_research(image):
     # Start after the atomic +44 read. The external readiness and pause queries
     # are controlled inputs; all three guard branches execute owned instructions.
     for state_value in [0, 17, 18, 19]:
         for ready in [False, True]:
             for paused in [False, True]:
-                m = Machine()
+                m = Machine(image)
                 root, publication, table = 0x100000, 0x101000, 0x102000
                 m.w32(0x83027D34, root)
                 m.w32(root + 0x98, publication)
@@ -129,7 +130,7 @@ def verify_research(Machine):
     # These checks do not substitute synthetic indices for a runtime producer.
     # Stop before phase/index selection; hook only the external index and timing
     # queries. In particular, no native ratio computation is hooked.
-    m = Machine()
+    m = Machine(image)
     state, provider, context, table, output = [0x100000 + i * 0x1000 for i in range(5)]
     m.writable = [(state, output + 0x1000)]
     m.w32(provider + 4, state)
@@ -229,20 +230,16 @@ def verify_research(Machine):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--analysis-dir", type=Path, required=True)
+    parser.add_argument("--game", type=Path, required=True,
+                        help="your Skate 3 folder, with default.xex")
     parser.add_argument("--rustc", default=shutil.which("rustc"))
     args = parser.parse_args()
     if args.rustc is None:
         parser.error("rustc was not found; supply --rustc")
-    expected = "ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42"
-    if hashlib.sha256((args.analysis_dir / "default.pe").read_bytes()).hexdigest() != expected:
-        parser.error("default.pe does not match the verified base-disc mapped image")
-    sys.dont_write_bytecode = True
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from ppc_interp import Machine
+    image = xex_image.load(args.game)
 
-    verify_clock(Machine, args.rustc)
-    verify_research(Machine)
+    verify_clock(image, args.rustc)
+    verify_research(image)
 
 
 if __name__ == "__main__":

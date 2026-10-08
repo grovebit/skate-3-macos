@@ -1,18 +1,19 @@
 """Replay the owned base-disc Collision +C4 publisher against production Rust.
 
-Uses the private VMX interpreter's existing dot3 lane convention, not a Xenon
-hardware trace. Scalar accumulation, branches and publication run unhooked.
+Uses the interpreter's host dot3 lane convention, not a Xenon hardware trace.
+Scalar accumulation, branches and publication run unhooked.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import random
 import shutil
 import struct
 import subprocess
-import sys
 import tempfile
+
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def bits(value):
@@ -21,16 +22,13 @@ def bits(value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--analysis-dir", type=Path, required=True)
+    parser.add_argument("--game", type=Path, required=True,
+                        help="your Skate 3 folder, with default.xex")
     parser.add_argument("--rustc", default=shutil.which("rustc"))
     args = parser.parse_args()
     if args.rustc is None:
         parser.error("rustc was not found; supply --rustc")
-    image = args.analysis_dir / "default.pe"
-    if hashlib.sha256(image.read_bytes()).hexdigest() != "ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42":
-        parser.error("default.pe does not match the verified base-disc mapped image")
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from vmx_interp import VmxMachine
+    image = xex_image.load(args.game)
 
     root = Path(__file__).resolve().parents[2]
     rng = random.Random(0x82BAE368)
@@ -51,7 +49,7 @@ def main():
                 delta = [bits(rng.uniform(-2, 2)) for _ in range(3)] + [0]
                 normal = [bits(rng.uniform(-1, 1)) for _ in range(3)] + [0]
             rows.append([part, force, *delta, *normal, bits(rng.uniform(0.001, 0.1))])
-        m = VmxMachine()
+        m = Machine(image)
         feedback, block, physical = 0x100000, 0x102050, 0x104000
         m.writable = [(feedback, feedback + 0x10000), (0x207000, 0x209000)]
         m.r[1], m.r[3] = 0x208000, feedback

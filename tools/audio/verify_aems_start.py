@@ -1,48 +1,29 @@
 """Replay Gai0's initial/changed 256-frame render against the existing Rust ramp.
 
-Requires the owned mapped image and local VMX interpreter. No proprietary
-bytes are embedded. This checks the node, not the game's thread scheduling.
+Replays the owned renderer from your own default.xex; no game bytes are
+embedded. This checks the node, not the game's thread scheduling.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import shutil
 import struct
 import subprocess
-import sys
 import tempfile
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tools.audio.verify_aems_selection import IMAGE_SHA256, replay_class
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--analysis-dir', type=Path, required=True)
+    parser.add_argument('--game', type=Path, required=True,
+                        help='your Skate 3 folder, with default.xex')
     parser.add_argument('--rustc', default=shutil.which('rustc'))
     args = parser.parse_args()
     if not args.rustc:
         parser.error('rustc is required')
-    if hashlib.sha256((args.analysis_dir / 'default.pe').read_bytes()).hexdigest() != IMAGE_SHA256:
-        parser.error('default.pe does not match the verified base-disc mapped image')
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from vmx_interp import VmxMachine
-
-    class Render(replay_class(VmxMachine)):
-        def step(self, pc):
-            mn, ops, _ = self.decode(pc)
-            if mn == 'vmr':
-                self.setv(ops[0], self.vr(ops[1]))
-                return pc + 4
-            if mn in ('dcbt', 'dcbtst'):
-                return pc + 4  # Cache prefetch only.
-            if mn in ('dcbz', 'dcbz128', 'dcbzl'):
-                address = ((0 if ops[0] in ('r0', '0') else self.gpr(ops[0]))
-                           + self.gpr(ops[1])) & 0xffffffff
-                self.write(address & ~127, bytes(128))
-                return pc + 4
-            return super().step(pc)
+    image = xex_image.load(args.game)
 
     fixtures, expected = [], []
     values = [0., .125, .5, 1., 2., struct.unpack('>f', bytes.fromhex('3f6e331d'))[0],
@@ -50,7 +31,7 @@ def main():
     for initial in (0, 1):
         for prior in values:
             for target in values:
-                m = Render()
+                m = Machine(image)
                 m.writable = [(0x100000, 0x110000), (0x200000, 0x210000)]
                 m.r[1] = 0x208000
                 node, context, input_desc, output_desc = 0x100000, 0x101000, 0x102000, 0x103000

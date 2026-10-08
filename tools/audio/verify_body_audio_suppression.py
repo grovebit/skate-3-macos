@@ -1,30 +1,28 @@
 """Replay the wipeout Collision+D6 suppression writer against production Rust.
 
-Owned base-disc instructions are loaded only from --analysis-dir. Other
+Owned base-disc instructions come only from your own default.xex. Other
 material branches are exit hooks: their behavior is outside this port.
 """
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
+
+from tools.native_replay import xex_image
+from tools.native_replay.ppc_interp import Machine
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--analysis-dir", type=Path, required=True)
+    parser.add_argument("--game", type=Path, required=True,
+                        help="your Skate 3 folder, with default.xex")
     parser.add_argument("--rustc", default=shutil.which("rustc"))
     args = parser.parse_args()
     if args.rustc is None:
         parser.error("rustc was not found; supply --rustc")
-    expected_hash = "ce1e3ae512ee08bb716529be671ee112c664414ce9541f14b84f5e5791f13f42"
-    if hashlib.sha256((args.analysis_dir / "default.pe").read_bytes()).hexdigest() != expected_hash:
-        parser.error("default.pe does not match the verified base-disc mapped image")
-    sys.path.insert(0, str(args.analysis_dir.resolve()))
-    from ppc_interp import Machine
+    image = xex_image.load(args.game)
 
     root = Path(__file__).resolve().parents[2]
     source = root / "crates/skate-game/src/physics/player_state/suppression.rs"
@@ -36,7 +34,7 @@ def main():
         for contact in [0, 1, 2, 127, 128, 255]:
             for prior in [0, 1, 2, 127, 128, 255]:
                 for state44 in [0, 1, 255]:
-                    m = Machine()
+                    m = Machine(image)
                     owner, table, processed, collision, packet, feedback, worker, filtered = [
                         0x100000 + 0x2000 * i for i in range(8)]
                     m.writable = [(owner, owner + 0x10000), (0x207000, 0x209000)]
