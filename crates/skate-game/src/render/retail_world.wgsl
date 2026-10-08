@@ -70,7 +70,8 @@ fn fragment(i: VertexOutput) -> @location(0) vec4<f32> {
     let g_macro = bindings::gradients_scaled(g, p.surface.x);
 
     var diffuse_uv=i.uv;
-    // The scroll offset is constant across the primitive, so gradients are unchanged.
+    // scrollincandescent_defaultVS 10: g_fAnimationTime.x times the authored
+    // speeds. The offset is constant across the primitive, so gradients are unchanged.
     if fam==14u { diffuse_uv+=fract(frame_state.clock.x*p.water[1].xy*vec2<f32>(1.0,-1.0)); }
     let a = bindings::sample_diffuse(slot, diffuse_uv, g);
     let lm = bindings::sample_lightmap(slot, i.uv_b, 0.0).rgb;
@@ -142,15 +143,17 @@ fn fragment(i: VertexOutput) -> @location(0) vec4<f32> {
         let g_pca=bindings::gradients_scaled(g,p.water[1].w);
         let c0=bindings::sample_normal_map(slot,sample_uv,g_pca)*2.0-1.0;
         let c1=bindings::sample_detail_map(slot,sample_uv,g_pca)*2.0-1.0;
+        // ocean_defaultPS 15..24 works in R, B, G order against the mean's X, Z,
+        // Y; `n` below swaps back. FrameState holds the native R, G, B pairs.
         let pca=(vec3<f32>(dot(c0,frame_state.pca[1])+dot(c1,frame_state.pca[2]),
-            dot(c0,frame_state.pca[3])+dot(c1,frame_state.pca[4]),
-            dot(c0,frame_state.pca[5])+dot(c1,frame_state.pca[6]))+frame_state.pca[0].xyz)*2.0-1.0;
+            dot(c0,frame_state.pca[5])+dot(c1,frame_state.pca[6]),
+            dot(c0,frame_state.pca[3])+dot(c1,frame_state.pca[4]))+frame_state.pca[0].xzy)*2.0-1.0;
         var overlay=1.0;
         if (flags & 4u)!=0u {
             let uv_overlay=raw_uv*p.surface.x;
             overlay=bindings::sample_macro_map(slot,vec2<f32>(uv_overlay.x,1.0-uv_overlay.y),g_macro).r;
         }
-        let tonedown=2.0*p.water[1].z*saturate(dot(c1,frame_state.pca[6])+overlay);
+        let tonedown=2.0*p.water[1].z*saturate(dot(c1,frame_state.pca[4])+overlay);
         let nt=normalize(max(abs(normalize(mix(vec3<f32>(0.0,0.0,1.0),pca,tonedown))),vec3<f32>(0.001)));
         let n=nt.xzy;
         let rv=vd-2.0*n*dot(vd,n);
@@ -170,9 +173,12 @@ fn fragment(i: VertexOutput) -> @location(0) vec4<f32> {
         lin=(cube*olm*olm*fres+ward*p.water[0].rgb)*p.water[1].y;
         alpha=1.0;
     } else if fam==30u || fam==33u {
+        // g_fAnimationTime.x (water_defaultPS 12, flowingwater_defaultPS 8):
+        // see retail_render::WaterAnimation.
         let t=frame_state.clock.x;
         // Convert to original UVs for scale/scroll, then back to flipped rows.
         let raw_uv=vec2<f32>(i.uv.x,1.0-i.uv.y);
+        // water_defaultPS 11..13: c20 * c21.x, with no extra ripple scale.
         let uv_scale=select(1.0,p.water[3].x,fam==33u);
         let uv1=raw_uv*p.water[2].xy*uv_scale+p.water[1].xy*t;
         let uv2=raw_uv*p.water[2].zw*uv_scale+p.water[1].zw*t;
@@ -191,16 +197,15 @@ fn fragment(i: VertexOutput) -> @location(0) vec4<f32> {
             let c2=bindings::sample_detail_map(slot,vec2<f32>(uv2.x,1.0-uv2.y),g2)*2.0-1.0;
             let a1=n1*2.0-1.0;
             let a2=n2*2.0-1.0;
-            // water_defaultPS instructions 22..54: the native mean is XYZ,
-            // weights are R/G/B pairs. FrameState stores the ocean's R/B/G
-            // arrangement; recover those original registers here.
-            let mean=frame_state.pca[0].xzy;
+            // water_defaultPS instructions 22..54: the native mean is XYZ and
+            // the weights are R/G/B pairs, in FrameState's order.
+            let mean=frame_state.pca[0].xyz;
             let pca1=vec3<f32>(dot(a1,frame_state.pca[1])+dot(c1,frame_state.pca[2])+mean.x,
-                dot(a1,frame_state.pca[5])+dot(c1,frame_state.pca[6])+mean.y,
-                dot(a1,frame_state.pca[3])+dot(c1,frame_state.pca[4])+mean.z);
+                dot(a1,frame_state.pca[3])+dot(c1,frame_state.pca[4])+mean.y,
+                dot(a1,frame_state.pca[5])+dot(c1,frame_state.pca[6])+mean.z);
             let pca2=vec3<f32>(dot(a2,frame_state.pca[1])+dot(c2,frame_state.pca[2])+mean.x,
-                dot(a2,frame_state.pca[5])+dot(c2,frame_state.pca[6])+mean.y,
-                dot(a2,frame_state.pca[3])+dot(c2,frame_state.pca[4])+mean.z);
+                dot(a2,frame_state.pca[3])+dot(c2,frame_state.pca[4])+mean.y,
+                dot(a2,frame_state.pca[5])+dot(c2,frame_state.pca[6])+mean.z);
             let first=vec3<f32>((pca2.x*2.0-1.0)*p.water[0].z,
                 1.0+2.0*(pca2.y-1.0)*p.water[0].z,(pca2.z*2.0-1.0)*p.water[0].z);
             let second=vec3<f32>((pca1.x*2.0-1.0)*p.water[0].w,

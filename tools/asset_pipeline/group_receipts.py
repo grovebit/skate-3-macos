@@ -11,7 +11,7 @@ ROOTS = {
     'character': ('assets/private/game.json', 'assets/private/skater.glb', 'assets/private/default_skater',
                   'assets/private/native-character', 'assets/private/character-lighting.json'),
     'environment': ('assets/private/native-skies', 'assets/private/native-backdrops',
-                    'assets/private/render-parameters.json', 'assets/private/exposure.json',
+                    'assets/private/render-parameters.json', 'assets/private/ocean-pca.json', 'assets/private/exposure.json',
                     'assets/private/exposure-profiles.json', 'assets/private/teleports.json', 'assets/private/environment-status'),
     'maps': ('assets/private/native-props', 'maps.json', 'assets/private/map-status'),
 }

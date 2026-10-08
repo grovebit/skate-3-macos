@@ -78,6 +78,9 @@ def environment(game_root, stage, work, report, log, converted=None):
     attempt('skies',lambda assets:write_skies(game_root,assets,converted))
     from .render_parameters import convert as write_render_parameters
     attempt('parameters',lambda assets:write_render_parameters(assets,converted))
+    report('Extracting the original ocean and water animation')
+    from .ocean_pca import convert as write_ocean_pca
+    attempt('ocean',lambda assets:write_ocean_pca(game_root,assets))
     report('Extracting original travel destinations and location names')
     from .teleports import convert as write_teleports
     attempt('teleports',lambda assets:write_teleports(game_root,assets,converted))

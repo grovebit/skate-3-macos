@@ -1,7 +1,7 @@
 """Instruction-subset PowerPC interpreter for replaying original routines.
 
 Verifiers execute functions from the mapped image of your own base-disc
-default.xex (`xex_image.load`) and compare the results with production Rust;
+default.xex (`owned_game.xex.load`) and compare the results with production Rust;
 no game bytes are stored in the repository. Calls between executed functions,
 including the compiler's save/restore helpers, run natively, so they keep the
 original stack discipline. Unsupported instructions and reads of unmapped
@@ -20,7 +20,7 @@ from fractions import Fraction
 from capstone import CS_ARCH_PPC, CS_MODE_32, CS_MODE_BIG_ENDIAN, Cs
 
 from tools.owned_game.ppc_vmx import decode as vmx_decode
-from tools.native_replay.xex_image import IMAGE_BASE
+from tools.owned_game.xex import IMAGE_BASE
 
 M64 = (1 << 64) - 1
 M32 = (1 << 32) - 1
