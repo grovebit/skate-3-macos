@@ -27,7 +27,7 @@ is grouped by area:
 | `animation/` | The skater's stock graph, pose evaluation and graph host. |
 | `camera/` | Gameplay and debug cameras. |
 | `character/` | Character shading, the customiser and custom models. |
-| `diagnostics/` | Crash reports, profiling, the `SKATE_PERF_REPORT` harness and startup verification. |
+| `diagnostics/` | Crash reports, profiling, the `SKATE_PERF_REPORT` harness with its map flythrough, and startup verification. |
 | `hud/` | The original APT HUD runtime, scoring HUD, session marker and FPS overlay. |
 | `input/` | Controllers (Apple's GameController framework) and gesture mapping. |
 | `menu/` | The settings and teleport menus. |

@@ -1,10 +1,14 @@
 //! Frame timing harness. Active only when `SKATE_PERF_REPORT` names an output
-//! path: warms up, samples a fixed window, writes JSON, then exits.
+//! path: enters fullscreen, warms up, samples a fixed window while the camera
+//! flies once around the map (`flythrough`), writes JSON, then exits.
 //!
 //! The `Performance` resource is absent in normal play, which is why callers
 //! take it as `Option<ResMut<_>>` — instrumentation must never cost anything in
 //! a shipping session.
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    window::{MonitorSelection, PrimaryWindow, WindowMode},
+};
 use std::{
     collections::VecDeque,
     path::PathBuf,
@@ -18,8 +22,8 @@ use std::{
 /// Seconds discarded before sampling, so shader compilation, asset streaming and
 /// the map publish settle do not pollute the window.
 const WARMUP: f32 = 10.0;
-/// Seconds of samples retained.
-const SAMPLE: f32 = 15.0;
+/// Seconds of samples retained, and the flythrough's duration.
+const SAMPLE: f32 = 60.0;
 /// A hitch is a frame longer than this many medians of the frames before it,
 /// upstream's `frame_timing` rule. A fixed threshold cannot work under vsync:
 /// every 120 Hz FIFO frame takes about 8.33 ms. A frame that misses one vblank
@@ -29,24 +33,6 @@ const HITCH_FACTOR: f32 = 2.0;
 /// Frames in the hitch median: one second at the 120 Hz FIFO presentation the
 /// harness normally measures. Warmup fills it, so every sample is classified.
 const HITCH_HISTORY: usize = 120;
-
-/// Draw statistics for one frame, owned by the main world.
-///
-/// Populated from the render world (see `render_stats`), which is a frame behind
-/// by construction; for a 15-second average that skew is irrelevant.
-#[derive(Resource, Default, Clone, Copy)]
-pub(crate) struct DrawStats {
-    pub world_draws: u32,
-    pub world_triangles: u32,
-    pub mod_draws: u32,
-    pub mod_triangles: u32,
-    pub other_draws: u32,
-}
-impl DrawStats {
-    pub(crate) fn total_draws(&self) -> u32 {
-        self.world_draws + self.mod_draws + self.other_draws
-    }
-}
 
 /// CPU cost of the render schedule, split at phase boundaries.
 ///
@@ -126,8 +112,6 @@ struct Frame {
     total_ms: f32,
     main_ms: f32,
     physics_ms: f32,
-    draws: u32,
-    triangles: u32,
     hitch: bool,
 }
 
@@ -181,8 +165,8 @@ impl Performance {
             main_elapsed: Duration::ZERO,
             physics_elapsed: Duration::ZERO,
             hitches: HitchHistory::default(),
-            // 15 s at an optimistic 600 FPS; growth beyond this is harmless.
-            samples: Vec::with_capacity(9_000),
+            // An optimistic 600 FPS; growth beyond this is harmless.
+            samples: Vec::with_capacity(SAMPLE as usize * 600),
             sampling: false,
             finished: false,
         }
@@ -192,6 +176,11 @@ impl Performance {
     /// zero or several times per frame, so this accumulates until the frame ends.
     pub(crate) fn physics(&mut self, elapsed: Duration) {
         self.physics_elapsed += elapsed;
+    }
+
+    /// Fraction of the sample window elapsed: 0 through the warmup, 1 at its end.
+    pub(super) fn sample_progress(&self) -> f32 {
+        ((self.started.elapsed().as_secs_f32() - WARMUP) / SAMPLE).clamp(0.0, 1.0)
     }
 }
 
@@ -203,9 +192,10 @@ impl Plugin for PerformancePlugin {
         };
         info!("SKATE_PERF starting: warmup={WARMUP}s sample={SAMPLE}s output={output:?}");
         let phases = RenderPhases::default();
-        app.insert_resource(Performance::new(output))
-            .init_resource::<DrawStats>()
+        app.add_plugins(super::flythrough::FlythroughPlugin)
+            .insert_resource(Performance::new(output))
             .insert_resource(phases.clone())
+            .add_systems(Startup, enter_fullscreen)
             .add_systems(First, frame_begin)
             .add_systems(Last, frame_end);
         // GPU timestamp/statistics queries add work of their own. Ordinary CPU
@@ -251,6 +241,13 @@ impl Plugin for PerformancePlugin {
     }
 }
 
+/// Measures the game as it is played: in the borderless fullscreen Alt+Enter
+/// selects (`graphics_menu::toggle_fullscreen`), entered before the window opens
+/// so no transition reaches the sample window.
+fn enter_fullscreen(mut window: Single<&mut Window, With<PrimaryWindow>>) {
+    window.mode = WindowMode::BorderlessFullscreen(MonitorSelection::Primary);
+}
+
 fn begin_render_frame(phases: Res<RenderPhases>) {
     phases.0.started.store(now_ns(), Ordering::Relaxed);
 }
@@ -291,9 +288,9 @@ fn frame_begin(mut performance: ResMut<Performance>) {
 fn frame_end(
     mut performance: ResMut<Performance>,
     time: Res<Time<Real>>,
-    draws: Res<DrawStats>,
     phases: Res<RenderPhases>,
     diagnostics: Res<bevy::diagnostic::DiagnosticsStore>,
+    window: Query<&Window, With<PrimaryWindow>>,
     mut exit: MessageWriter<AppExit>,
 ) {
     if performance.finished {
@@ -323,8 +320,6 @@ fn frame_end(
         total_ms,
         main_ms,
         physics_ms,
-        draws: draws.total_draws(),
-        triangles: draws.world_triangles + draws.mod_triangles,
         hitch,
     });
 
@@ -332,8 +327,12 @@ fn frame_end(
         return;
     }
     performance.finished = true;
-    let mut report = summarise(&performance.samples, &draws);
+    let mut report = summarise(&performance.samples);
     report.render_phase_ms = phases.means();
+    if let Ok(window) = window.single() {
+        report.window_mode = format!("{:?}", window.mode);
+        report.window_physical_size = window.physical_size().to_array();
+    }
     // Every render diagnostic, so GPU pass costs land in the report without
     // this module needing to know the pass names the render graph happens to use.
     report.gpu = diagnostics
@@ -349,14 +348,15 @@ fn frame_end(
     }
     let [extract, assets, views, queue, prepare, graph] = report.render_phase_ms;
     eprintln!(
-        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} hitches={} main={:.3} draws={} triangles={}",
+        "SKATE_PERF fps={:.1} frame_ms_mean={:.3} p99={:.3} hitches={} main={:.3} window={}x{} {}",
         report.fps,
         report.frame_ms_mean,
         report.frame_ms_p99,
         report.hitch_frames,
         report.main_schedule_ms_mean,
-        report.draw_calls,
-        report.triangles
+        report.window_physical_size[0],
+        report.window_physical_size[1],
+        report.window_mode,
     );
     eprintln!(
         "SKATE_PERF_RENDER extract={extract:.3} assets={assets:.3} views={views:.3} \
@@ -391,17 +391,18 @@ struct Report {
     hitch_frames: usize,
     main_schedule_ms_mean: f32,
     physics_ms_mean: f32,
-    draw_calls: u32,
-    triangles: u32,
     /// extract, assets, views, queue, prepare, graph — see `RenderPhases`.
     render_phase_ms: [f32; 6],
+    /// Presentation the samples were taken at: mode and drawable pixels.
+    window_mode: String,
+    window_physical_size: [u32; 2],
     /// Render diagnostics, highest first. Includes GPU pass timings when the
     /// adapter supports timestamp queries.
     gpu: Vec<(String, f64)>,
     samples: Vec<Frame>,
 }
 
-fn summarise(samples: &[Frame], draws: &DrawStats) -> Report {
+fn summarise(samples: &[Frame]) -> Report {
     let frames = samples.len();
     let mut sorted: Vec<f32> = samples.iter().map(|f| f.total_ms).collect();
     sorted.sort_by(|a, b| a.total_cmp(b));
@@ -439,9 +440,9 @@ fn summarise(samples: &[Frame], draws: &DrawStats) -> Report {
         hitch_frames: samples.iter().filter(|f| f.hitch).count(),
         main_schedule_ms_mean: mean(&samples.iter().map(|f| f.main_ms).collect::<Vec<_>>()),
         physics_ms_mean: mean(&samples.iter().map(|f| f.physics_ms).collect::<Vec<_>>()),
-        draw_calls: draws.total_draws(),
-        triangles: draws.world_triangles + draws.mod_triangles,
         render_phase_ms: [0.0; 6],
+        window_mode: String::new(),
+        window_physical_size: [0; 2],
         gpu: Vec::new(),
         samples: samples.to_vec(),
     }
@@ -465,14 +466,14 @@ fn write_report(path: &std::path::Path, report: &Report) -> std::io::Result<()> 
         "hitch_history_frames": HITCH_HISTORY,
         "main_schedule_ms_mean": report.main_schedule_ms_mean,
         "physics_ms_mean": report.physics_ms_mean,
-        "draw_calls": report.draw_calls,
-        "triangles": report.triangles,
         "render_extract_ms_mean": report.render_phase_ms[0],
         "render_assets_ms_mean": report.render_phase_ms[1],
         "render_views_ms_mean": report.render_phase_ms[2],
         "render_queue_ms_mean": report.render_phase_ms[3],
         "render_prepare_ms_mean": report.render_phase_ms[4],
         "render_graph_ms_mean": report.render_phase_ms[5],
+        "window_mode": report.window_mode,
+        "window_physical_size": report.window_physical_size,
         "render_diagnostics": report.gpu.iter()
             .map(|(name, value)| serde_json::json!({ "name": name, "ms": value }))
             .collect::<Vec<_>>(),
@@ -482,8 +483,6 @@ fn write_report(path: &std::path::Path, report: &Report) -> std::io::Result<()> 
             "frame_ms": f.total_ms,
             "main_ms": f.main_ms,
             "physics_ms": f.physics_ms,
-            "draws": f.draws,
-            "triangles": f.triangles,
             "hitch": f.hitch,
         })).collect::<Vec<_>>(),
     });
@@ -503,14 +502,14 @@ mod tests {
         // Values 1..=100, so the Nth smallest sample is exactly N ms and every
         // rank is readable directly.
         let samples: Vec<Frame> = (1..=100).map(|ms| frame(ms as f32)).collect();
-        let report = summarise(&samples, &DrawStats::default());
+        let report = summarise(&samples);
         assert_eq!(report.frames, 100);
         assert_eq!(report.frame_ms_median, 50.0);
         assert_eq!(report.frame_ms_p95, 95.0);
         assert_eq!(report.frame_ms_p99, 99.0);
         assert_eq!(report.frame_ms_max, 100.0);
         // A single sample is every percentile of itself.
-        let one = summarise(&[frame(7.0)], &DrawStats::default());
+        let one = summarise(&[frame(7.0)]);
         assert_eq!(
             (one.frame_ms_median, one.frame_ms_p95, one.frame_ms_p99),
             (7.0, 7.0, 7.0)
@@ -521,7 +520,7 @@ mod tests {
     fn fps_is_the_reciprocal_of_mean_frame_time() {
         // 300 FPS is the contract; 3.333 ms per frame must read back as ~300.
         let samples = vec![frame(10.0 / 3.0); 64];
-        let report = summarise(&samples, &DrawStats::default());
+        let report = summarise(&samples);
         assert!((report.fps - 300.0).abs() < 1.0, "fps={}", report.fps);
     }
 
@@ -546,7 +545,7 @@ mod tests {
             .map(|i| if i % 2 == 0 { 7.9 } else { 8.8 })
             .collect();
         frames[2 * HITCH_HISTORY] = 25.0;
-        let report = summarise(&sampled(&frames, HITCH_HISTORY), &DrawStats::default());
+        let report = summarise(&sampled(&frames, HITCH_HISTORY));
         assert_eq!(report.frames, 2 * HITCH_HISTORY);
         assert_eq!(report.hitch_frames, 1);
         assert!(report.samples[HITCH_HISTORY].hitch);
@@ -579,14 +578,14 @@ mod tests {
     fn a_sustained_slowdown_stops_counting_once_it_is_the_median() {
         let mut frames = vec![1000.0 / 120.0; HITCH_HISTORY];
         frames.extend(vec![20.0; 2 * HITCH_HISTORY]);
-        let report = summarise(&sampled(&frames, HITCH_HISTORY), &DrawStats::default());
+        let report = summarise(&sampled(&frames, HITCH_HISTORY));
         // Slow frames count until they fill the lower half of the history.
         assert_eq!(report.hitch_frames, HITCH_HISTORY / 2 + 1);
     }
 
     #[test]
     fn empty_sample_set_does_not_panic() {
-        let report = summarise(&[], &DrawStats::default());
+        let report = summarise(&[]);
         assert_eq!(report.frames, 0);
         assert_eq!(report.fps, 0.0);
         assert_eq!(report.fps_1_percent_low, 0.0);
@@ -596,11 +595,11 @@ mod tests {
     fn one_percent_low_averages_the_tail_including_fractional_sample_counts() {
         let mut samples = vec![frame(2.0); 199];
         samples.extend([frame(10.0), frame(18.0)]);
-        let report = summarise(&samples, &DrawStats::default());
+        let report = summarise(&samples);
         assert_eq!(report.frame_ms_p99, 2.0);
         assert_eq!(report.slowest_1_percent_ms_mean, 10.0);
         assert_eq!(report.fps_1_percent_low, 100.0);
-        let one = summarise(&[frame(8.0)], &DrawStats::default());
+        let one = summarise(&[frame(8.0)]);
         assert_eq!(one.fps_1_percent_low, 125.0);
     }
 }
