@@ -143,7 +143,7 @@ pub(super) fn snapshot(world: &World, mods: &super::Mods) -> Value {
             "drive_enabled":!animation_disabled.contains(&j.child),
             "possession_enabled":!possession_disabled.contains(&j.child),
             "load":s.mod_contact_frame.joint_loads.get(&i),
-            "parameters":w,"frames":j.frames.words.to_vec(),
+            "parameters":w,"frames":j.frames.words,
             "override_owner":s.mod_joint_overrides.get(&i).map(|(o,_)|o)})
     }).collect::<Vec<_>>();
     let parts=s.skeleton.bodies().iter().enumerate().map(|(i,b)| {
@@ -169,8 +169,13 @@ pub(super) fn snapshot(world: &World, mods: &super::Mods) -> Value {
         .enumerate()
         .map(|(i, b)| body_value("board", i, b))
         .collect::<Vec<_>>();
-    json!({"tick":s.mod_contact_frame.tick,"dt":dt,"contacts":contacts,"contacts_truncated":s.mod_contact_frame.truncated,"joints":joints,"parts":parts,"board":board,
-        "ragdoll":s.skeleton_collision.is_ragdoll,"partial_ragdoll":s.skeleton_collision.partial_ragdoll})
+    let mut out = json!({"tick":s.mod_contact_frame.tick,"dt":dt,"contacts_truncated":s.mod_contact_frame.truncated,
+        "ragdoll":s.skeleton_collision.is_ragdoll,"partial_ragdoll":s.skeleton_collision.partial_ragdoll});
+    // Moved in: `json!` would serialize each built array into a deep copy.
+    for (key, rows) in [("contacts", contacts), ("joints", joints), ("parts", parts), ("board", board)] {
+        out[key] = Value::Array(rows);
+    }
+    out
 }
 
 #[cfg(test)]

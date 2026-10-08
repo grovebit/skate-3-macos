@@ -195,12 +195,21 @@ pub(crate) fn init() -> Result<Guard, String> {
     let stderr = bevy::log::tracing_subscriber::fmt::layer()
         .with_writer(std::io::stderr)
         .with_target(false);
+    let options = options()?;
+    // Spans exist for the capture. Without one, every system run would still
+    // create, enter and close a span (2-3% of each thread's CPU in a University
+    // profile) only to prefix log lines, so their callsites are disabled.
+    let capturing = options.is_some();
+    let spans = bevy::log::tracing_subscriber::filter::filter_fn(move |metadata| {
+        capturing || !metadata.is_span()
+    });
 
-    let Some(options) = options()? else {
+    let Some(options) = options else {
         // `try_init` rather than `init`: losing the race for the global
         // subscriber costs log formatting, and killing the process over log
         // formatting is never the right trade.
         if let Err(error) = bevy::log::tracing_subscriber::registry()
+            .with(spans)
             .with(filter)
             .with(stderr)
             .try_init()
@@ -230,6 +239,7 @@ pub(crate) fn init() -> Result<Guard, String> {
     // Here a failure does matter: without this subscriber no spans reach the
     // capture, so the trace would be an empty file rather than a bad one.
     bevy::log::tracing_subscriber::registry()
+        .with(spans)
         .with(filter)
         .with(stderr)
         .with(ChromeLayer { capture })

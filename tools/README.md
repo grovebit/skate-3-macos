@@ -64,8 +64,17 @@ disc first; no game bytes are stored in the repository. Pass your game folder:
 
 ## Performance
 
-[`performance/`](performance/) analyzes frame-time reports and Chrome traces;
-see [`docs/performance/`](../docs/performance/README.md).
+[`performance/`](performance/) measures the game and analyzes the results; see
+[`docs/performance/`](../docs/performance/README.md).
+
+- `bench.sh` runs builds in alternating rounds through the `SKATE_PERF_REPORT`
+  harness, optionally under the Time Profiler or a Metal System Trace.
+- `metal_stats.py` reads macOS's always-on Metal statistics for those runs:
+  process instructions, missed vblanks, GPU time and drawable waits.
+- `time_profile.py` summarizes a Time Profiler capture per thread, with Rust
+  symbols demangled; `metal_trace.py` gives GPU time per render pass.
+- `analyse_performance_trace.py` and `parse_trace.py` read the engine's own
+  Chrome traces (`--trace`).
 
 ## Tests
 
