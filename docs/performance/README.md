@@ -9,6 +9,7 @@ was squashed, kept locally on the `backup/pre-squash-6a9c7db` branch.
 | --- | --- |
 | [2026-10-08-setup-conversion](2026-10-08-setup-conversion.md) | Game conversion was mostly single-threaded or waiting on a slow data drive; parallel stages and a temporary folder on the startup disk cut it from 340 s to 120 s. |
 | [2026-10-08-hidden-board-world-query](2026-10-08-hidden-board-world-query.md) | A hidden or returning board no longer walks every map triangle each tick: about 1 ms per query on University before, at most 20 ns after. |
+| [2026-10-08 solver iterations](../physics/solver-iterations.md#cost) | 50 solver passes instead of 25 add 0.06–0.08 ms per 60 Hz tick at rest and 0.16 ms in a bail; FIFO pacing is unchanged. |
 | [2026-10-07-presentation-fifo](2026-10-07-presentation-fifo.md) | Frames waited on drawable acquisition; FIFO vsync gives a steady 119.7 FPS instead of 78 FPS with uneven pacing. |
 | [2026-10-05-native-only-timing](2026-10-05-native-only-timing.md) | Four minutes of native Metal timing without Instruments; slow intervals persist without a profiler attached. |
 | [2026-10-05-drawable-acquisition-stall](2026-10-05-drawable-acquisition-stall.md) | A focused slowdown traced to `nextDrawable` waits rather than CPU work. |

@@ -8,8 +8,9 @@
   measurements.
 - Rendering notes: [water animation](rendering/water-animation.md), the
   original PCA ocean table and the clock the water shaders read.
-- Physics notes: [quarter-pipe transition input](physics/quarter-pipe-transition-input.md)
-  and [grind trick state 202](physics/grind-trick-state-202.md).
+- Physics notes: [quarter-pipe transition input](physics/quarter-pipe-transition-input.md),
+  [grind trick state 202](physics/grind-trick-state-202.md) and
+  [solver iterations](physics/solver-iterations.md).
 - World notes: [map starts and trigger-volume collision](world/spawns.md):
   where each map starts and why surfaceless collision boxes are skipped.
 
