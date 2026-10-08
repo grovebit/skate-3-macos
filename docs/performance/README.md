@@ -20,12 +20,13 @@ was squashed, kept locally on the `backup/pre-squash-6a9c7db` branch.
 | [2026-10-05-gameplay-cpu](2026-10-05-gameplay-cpu.md) | Time Profiler baseline and the first optimization candidates. |
 
 `crates/skate-game/src/diagnostics/performance.rs` implements the
-`SKATE_PERF_REPORT` harness used by most records. Since 2026-10-08 it opens in
-borderless fullscreen, warms up for 10 s with the camera at the start of a
-route, then samples 60 s while the camera flies once around the map
+`SKATE_PERF_REPORT` harness used by most records. Since 2026-10-08 the game
+presents without vsync again, and the harness opens in borderless fullscreen
+with the saved frame limit off, warms up for 10 s with the camera at the start
+of a route, then samples 60 s while the camera flies once around the map
 (`diagnostics/flythrough.rs`): a loop through the map's authored travel
 destinations, 3 m above the topmost collision surface. Each report records the
-window mode and drawable size. Earlier records sampled 15 s of an idle skater at
+window mode, drawable size and present mode. Earlier records sampled 15 s of an idle skater at
 the spawn, mostly in a 1920x1080-point window, so their numbers are not
 comparable. [`tools/performance/`](../../tools/performance/) holds the
 alternating-run script and the trace summaries.

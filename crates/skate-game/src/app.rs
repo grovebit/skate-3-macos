@@ -83,6 +83,10 @@ pub(crate) fn build(
                 primary_window: Some(Window {
                     title: config.multiplayer.title.clone().unwrap_or_else(||"Skate 3 Rust Engine".into()),
                     resolution: (1280, 800).into(),
+                    // Frames present as soon as they are ready, without
+                    // waiting for vblank; the graphics menu's FPS limit caps
+                    // the rate instead.
+                    present_mode: bevy::window::PresentMode::AutoNoVsync,
                     ..default()
                 }),
                 ..default()
